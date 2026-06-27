@@ -6,6 +6,7 @@
 <title>行動予定カレンダー（共有版）</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --navy:#1B2A4A;--blue:#2D6BE4;--sky:#E8F0FE;
@@ -201,6 +202,41 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:11px 22px;border-radius:10px;font-size:.85rem;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:1000;white-space:nowrap;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ── マップ（地図ピン） ── */
+#mapScreen{display:none}
+.map-wrap{padding:14px 16px;max-width:1100px;margin:0 auto}
+#leafletMap{width:100%;height:60vh;min-height:380px;border-radius:12px;border:1px solid var(--border);overflow:hidden;background:#E8EDFB}
+.map-hint{font-size:.74rem;color:var(--muted);text-align:center;margin:10px 0}
+.leaflet-pin{font-size:28px;line-height:28px;text-shadow:0 1px 3px rgba(0,0,0,.45);transform:translate(-50%,-100%);cursor:pointer}
+.pin-list{display:grid;gap:8px;margin-top:6px}
+.pin-list-title{font-size:.8rem;font-weight:700;color:var(--navy);margin:14px 0 8px}
+.pin-item{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer;transition:box-shadow .15s}
+.pin-item:hover{box-shadow:0 2px 10px rgba(45,107,228,.15)}
+.pin-thumb{width:46px;height:46px;border-radius:7px;object-fit:cover;flex-shrink:0;background:var(--sky)}
+.pin-thumb.none{display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.pin-info{flex:1;min-width:0}
+.pin-date{font-size:.68rem;color:var(--blue);font-weight:700}
+.pin-content{font-size:.8rem;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pin-by{font-size:.66rem;color:var(--muted)}
+
+/* ── ピン入力モーダル（PC/スマホ共通）── */
+.pin-modal-bg{display:none;position:fixed;inset:0;background:rgba(27,42,74,.5);z-index:700;align-items:center;justify-content:center;padding:16px}
+.pin-modal-bg.show{display:flex}
+.pin-modal{background:#fff;border-radius:16px;padding:24px;width:430px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(27,42,74,.3)}
+.pin-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.pin-modal-head h2{font-size:1rem;font-weight:700;color:var(--navy)}
+.pin-inp{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.88rem;color:var(--text);outline:none;margin-bottom:12px;transition:border .15s}
+.pin-inp:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(45,107,228,.15)}
+.pin-textarea{height:72px;resize:none}
+.pin-photo-preview{max-width:100%;max-height:180px;border-radius:8px;margin-bottom:8px;display:block;object-fit:cover}
+.pin-photo-zone{border:2px dashed var(--border);border-radius:10px;padding:13px;text-align:center;cursor:pointer;margin-bottom:14px;font-size:.8rem;color:var(--muted);transition:border .15s}
+.pin-photo-zone:hover{border-color:var(--blue);color:var(--blue)}
+.pin-btns{display:flex;gap:8px;margin-top:4px}
+.pin-btn-save{flex:1;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer}
+.pin-btn-save:hover{background:#1a56cb}
+.pin-btn-del{padding:12px 14px;background:#FEE2E2;color:var(--red);border:none;border-radius:9px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer}
+.pin-btn-cancel{padding:12px 14px;background:var(--bg);color:var(--muted);border:none;border-radius:9px;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer}
+
 footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 
 /* ── スマホ専用 ── */
@@ -218,6 +254,8 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
   .today-grid{grid-template-columns:1fr}
   .dc.has-data .dn::after{content:'●';font-size:.45rem;color:var(--blue);vertical-align:super;margin-left:2px}
   .login-box{padding:30px 20px}
+  #leafletMap{height:48vh;min-height:300px}
+  .map-wrap{padding:8px 10px}
 }
 @media(min-width:701px){
   .modal-bg{display:none!important}
@@ -279,6 +317,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
     <div class="login-grid" id="loginGrid"></div>
     <div class="login-links">
       <button class="llink" onclick="openToday()">📋 本日の予定表</button>
+      <button class="llink" onclick="openMap()">📍 土庄町マップ</button>
       <button class="llink" onclick="openSettings()">⚙ メンバー設定</button>
     </div>
   </div>
@@ -298,6 +337,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
         <button class="ys-btn" onclick="changeYear(1)">▶</button>
       </div>
       <button class="hbtn" onclick="openToday()">📋 本日</button>
+      <button class="hbtn" onclick="openMap()">📍 地図</button>
       <button class="hbtn" onclick="openSettings()">⚙ 設定</button>
       <button class="hbtn" onclick="logout()">← 戻る</button>
     </div>
@@ -329,6 +369,23 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
     <button class="hbtn" onclick="closeToday()">← 戻る</button>
   </header>
   <div class="today-wrap"><div class="today-grid" id="todayWrapper"></div></div>
+</div>
+
+<!-- マップ（土庄町ピン） -->
+<div id="mapScreen">
+  <header>
+    <div class="h-left">
+      <h1>📍 土庄町マップ</h1>
+      <p>香川県小豆郡土庄町 — タップしてピンを追加</p>
+    </div>
+    <button class="hbtn" onclick="closeMap()">← 戻る</button>
+  </header>
+  <div class="map-wrap">
+    <div id="leafletMap"></div>
+    <div class="map-hint">地図をタップ（クリック）すると、その場所にピンを追加できます</div>
+    <div class="pin-list-title">📌 登録されているピン</div>
+    <div class="pin-list" id="pinList"></div>
+  </div>
 </div>
 
 <!-- 日付モーダル（スマホ用） -->
@@ -369,6 +426,20 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 
 <div class="toast" id="toast"></div>
 
+<!-- ピン入力モーダル -->
+<div class="pin-modal-bg" id="pinModalBg" onclick="if(event.target===this)closePinModal()">
+  <div class="pin-modal">
+    <div class="pin-modal-head">
+      <h2 id="pinModalTitle">📍 新しいピン</h2>
+      <button class="modal-close" onclick="closePinModal()">✕</button>
+    </div>
+    <div id="pinModalBody"></div>
+  </div>
+</div>
+
+<!-- Leaflet -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -391,7 +462,7 @@ function saveFirebaseConfig() {
   const cfg = {
     apiKey,
     authDomain: `${projectId}.firebaseapp.com`,
-    databaseURL: `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`,
+    databaseURL: `https://${projectId}-default-rtdb.firebaseio.com`,
     projectId,
     storageBucket: `${projectId}.appspot.com`,
     appId
@@ -403,14 +474,7 @@ function saveFirebaseConfig() {
 }
 window.saveFirebaseConfig = saveFirebaseConfig;
 
-const fbConfig = {
-  apiKey: "AIzaSyCZLWATdimsfygT2z0y15q3ZEF1RwI3oWw",
-  authDomain: "schedulemanagement-32904.firebaseapp.com",
-  databaseURL: "https://schedulemanagement-32904-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "schedulemanagement-32904",
-  storageBucket: "schedulemanagement-32904.appspot.com",
-  appId: "1:630989878288:web:cbedc72e9fbd3295a50695"
-};
+const fbConfig = getFirebaseConfig();
 if (!fbConfig) {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('setupScreen').style.display = 'flex';
@@ -914,6 +978,147 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 window.showToast=showToast;
+
+// ═══ マップ（地図ピン） ════════════════════════════════════
+const TONOSHO_CENTER=[34.4936,134.1839]; // 香川県小豆郡土庄町
+const DB_PINS='map_pins';
+let leafletMap=null,pinMarkersLayer=null,mapPins={},unsubscribePins=null;
+let editingPinId=null,editingLat=null,editingLng=null,pendingPhotoData=null;
+
+window.openMap=function(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('mapScreen').style.display='block';
+  initLeafletMap();
+  startPinListener();
+};
+window.closeMap=function(){
+  document.getElementById('mapScreen').style.display='none';
+  if(myIndex>=0)document.getElementById('appScreen').style.display='block';
+  else{document.getElementById('loginScreen').style.display='flex';renderLoginScreen();}
+};
+
+function initLeafletMap(){
+  if(leafletMap){setTimeout(()=>leafletMap.invalidateSize(),60);return}
+  leafletMap=L.map('leafletMap',{center:TONOSHO_CENTER,zoom:13});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,attribution:'&copy; OpenStreetMap contributors'
+  }).addTo(leafletMap);
+  pinMarkersLayer=L.layerGroup().addTo(leafletMap);
+  leafletMap.on('click',(e)=>openPinModal(null,e.latlng.lat,e.latlng.lng));
+  setTimeout(()=>leafletMap.invalidateSize(),60);
+}
+function pinIcon(){
+  return L.divIcon({html:'<div class="leaflet-pin">📍</div>',className:'',iconSize:[28,28],iconAnchor:[14,28]});
+}
+function startPinListener(){
+  if(unsubscribePins)return;
+  unsubscribePins=fbListen(DB_PINS,(val)=>{
+    mapPins=val||{};
+    renderPinMarkers();
+    renderPinList();
+  });
+}
+function renderPinMarkers(){
+  if(!pinMarkersLayer)return;
+  pinMarkersLayer.clearLayers();
+  Object.entries(mapPins).forEach(([id,pin])=>{
+    if(pin==null||pin.lat==null||pin.lng==null)return;
+    const marker=L.marker([pin.lat,pin.lng],{icon:pinIcon()});
+    marker.on('click',()=>openPinModal(id));
+    marker.addTo(pinMarkersLayer);
+  });
+}
+function renderPinList(){
+  const list=document.getElementById('pinList');
+  if(!list)return;
+  const entries=Object.entries(mapPins).filter(([,p])=>p).sort((a,b)=>(b[1].date||'').localeCompare(a[1].date||''));
+  if(!entries.length){list.innerHTML='<div style="text-align:center;color:#7A8BAA;font-size:.8rem;padding:14px 0">まだピンが登録されていません</div>';return}
+  list.innerHTML=entries.map(([id,pin])=>{
+    const thumb=pin.photo?`<img class="pin-thumb" src="${pin.photo}">`:`<div class="pin-thumb none">📍</div>`;
+    return`<div class="pin-item" onclick="focusPin('${id}')">
+      ${thumb}
+      <div class="pin-info">
+        <div class="pin-date">${esc(pin.date||'日付未設定')}</div>
+        <div class="pin-content">${esc(pin.content||'（内容なし）')}</div>
+        <div class="pin-by">${pin.by?'登録: '+esc(pin.by):''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.focusPin=function(id){
+  const pin=mapPins[id];
+  if(!pin||!leafletMap)return;
+  leafletMap.setView([pin.lat,pin.lng],15);
+  openPinModal(id);
+};
+function openPinModal(id,lat,lng){
+  editingPinId=id;pendingPhotoData=null;
+  const pin=id?mapPins[id]:null;
+  editingLat=pin?pin.lat:lat;editingLng=pin?pin.lng:lng;
+  document.getElementById('pinModalTitle').textContent=pin?'📍 ピンの詳細':'📍 新しいピンを追加';
+  const todayStr=new Date().toISOString().slice(0,10);
+  const photoVisible=!!(pin&&pin.photo);
+  document.getElementById('pinModalBody').innerHTML=`
+    <div class="m-lbl">日付</div>
+    <input type="date" class="pin-inp" id="pinDateInp" value="${esc(pin?pin.date||'':todayStr)}">
+    <div class="m-lbl">内容</div>
+    <textarea class="pin-inp pin-textarea" id="pinContentInp" placeholder="例：迷路のまちで写真を撮った">${esc(pin?pin.content||'':'')}</textarea>
+    <div class="m-lbl">写真</div>
+    <img class="pin-photo-preview" id="pinPhotoPreview" src="${photoVisible?pin.photo:''}" style="${photoVisible?'':'display:none'}">
+    <div class="pin-photo-zone" onclick="document.getElementById('pinPhotoFile').click()">📷 タップして写真を選択</div>
+    <input type="file" id="pinPhotoFile" accept="image/*" style="display:none" onchange="handlePinPhoto(this)">
+    <div class="pin-btns">
+      ${pin?'<button class="pin-btn-del" onclick="deletePin()">🗑 削除</button>':''}
+      <button class="pin-btn-cancel" onclick="closePinModal()">キャンセル</button>
+      <button class="pin-btn-save" onclick="savePin()">💾 保存</button>
+    </div>`;
+  document.getElementById('pinModalBg').classList.add('show');
+}
+window.closePinModal=function(){document.getElementById('pinModalBg').classList.remove('show')};
+window.handlePinPhoto=function(inputEl){
+  const file=inputEl.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const maxDim=1000;let w=img.width,h=img.height;
+      if(w>maxDim||h>maxDim){
+        if(w>h){h=Math.round(h*maxDim/w);w=maxDim}else{w=Math.round(w*maxDim/h);h=maxDim}
+      }
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      pendingPhotoData=canvas.toDataURL('image/jpeg',0.7);
+      const preview=document.getElementById('pinPhotoPreview');
+      preview.src=pendingPhotoData;preview.style.display='block';
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+window.savePin=async function(){
+  const date=document.getElementById('pinDateInp').value;
+  const content=document.getElementById('pinContentInp').value.trim();
+  const id=editingPinId||('p'+Date.now()+Math.random().toString(36).slice(2,7));
+  const existing=editingPinId?mapPins[editingPinId]:null;
+  const photo=pendingPhotoData||(existing?existing.photo:null)||null;
+  const pinData={lat:editingLat,lng:editingLng,date,content,photo,
+    by:myIndex>=0?(members[myIndex]||''):'',updatedAt:Date.now()};
+  closePinModal();
+  showSyncBar('saving','💾 ピンを保存中...');
+  const ok=await fbSet(DB_PINS+'/'+id,pinData);
+  if(ok)showSyncBar('saved','✅ ピンを保存しました');
+};
+window.deletePin=async function(){
+  if(!editingPinId)return;
+  if(!confirm('このピンを削除しますか？'))return;
+  const id=editingPinId;
+  closePinModal();
+  await fbSet(DB_PINS+'/'+id,null);
+  showToast('🗑 ピンを削除しました');
+};
 
 // ═══ 初期化 ════════════════════════════════════════════════
   try{
