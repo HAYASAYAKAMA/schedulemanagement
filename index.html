@@ -50,7 +50,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .pw-hint{font-size:.72rem;color:var(--muted);margin-top:16px;padding:10px 14px;background:var(--bg);border-radius:8px;line-height:1.7}
 
 /* ── ログイン ── */
-#loginScreen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)}
+#loginScreen{display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)}
 .login-box{background:#fff;border-radius:20px;padding:38px 30px;width:420px;max-width:95vw;box-shadow:0 24px 80px rgba(27,42,74,.35)}
 .login-box h1{font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:4px}
 .login-box>p{font-size:.8rem;color:var(--muted);margin-bottom:10px}
@@ -70,12 +70,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .login-links{display:flex;gap:14px;justify-content:center}
 .llink{background:none;border:none;cursor:pointer;font-size:.75rem;color:#9AB0D0;text-decoration:underline;font-family:inherit;padding:0}
 .llink:hover{color:var(--blue)}
-.qlink-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.qlink-btn{padding:13px 6px;border-radius:10px;border:2px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--navy);transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:5px}
-.qlink-btn:hover{border-color:var(--blue);background:var(--sky);color:var(--blue)}
-.qlink-btn .qi{font-size:1.4rem}
-.quick-box{background:#fff;border-radius:20px;padding:20px 22px;width:440px;max-width:95vw;box-shadow:0 24px 80px rgba(27,42,74,.35)}
-.quick-box-title{font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:11px;text-align:center}
+.login-row{display:flex;align-items:flex-start;justify-content:center;gap:16px;flex-wrap:wrap}
+.quick-col{display:flex;flex-direction:column;gap:10px;width:210px}
+.quick-box{width:100%;background:#fff;border:none;border-radius:14px;padding:15px 16px;box-shadow:0 14px 50px rgba(27,42,74,.3);cursor:pointer;display:flex;align-items:center;gap:11px;font-family:inherit;transition:all .15s}
+.quick-box:hover{transform:translateY(-2px);box-shadow:0 18px 60px rgba(27,42,74,.35)}
+.quick-box .qi{font-size:1.6rem;flex-shrink:0}
+.quick-box .ql-label{font-size:.88rem;font-weight:700;color:var(--navy)}
 
 /* ── アプリ ── */
 #appScreen{display:none}
@@ -260,6 +260,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
   .today-grid{grid-template-columns:1fr}
   .dc.has-data .dn::after{content:'●';font-size:.45rem;color:var(--blue);vertical-align:super;margin-left:2px}
   .login-box{padding:30px 20px}
+  .quick-col{width:100%;max-width:420px}
   #leafletMap{height:48vh;min-height:300px}
   .map-wrap{padding:8px 10px}
 }
@@ -311,23 +312,22 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 
 <!-- ログイン -->
 <div id="loginScreen">
-  <div class="login-box">
-    <h1 id="loginTitle">📅 行動予定カレンダー</h1>
-    <p>あなたの名前を選んでください</p>
-    <div class="cloud-badge"><span class="pulse"></span>Firebaseでリアルタイム共有中</div>
-    <div class="login-year">
-      <button class="ly-btn" onclick="changeYear(-1)">◀</button>
-      <span class="ly-lbl" id="loginYearLabel">2026年度</span>
-      <button class="ly-btn" onclick="changeYear(1)">▶</button>
+  <div class="login-row">
+    <div class="login-box">
+      <h1 id="loginTitle">📅 行動予定カレンダー</h1>
+      <p>あなたの名前を選んでください</p>
+      <div class="cloud-badge"><span class="pulse"></span>Firebaseでリアルタイム共有中</div>
+      <div class="login-year">
+        <button class="ly-btn" onclick="changeYear(-1)">◀</button>
+        <span class="ly-lbl" id="loginYearLabel">2026年度</span>
+        <button class="ly-btn" onclick="changeYear(1)">▶</button>
+      </div>
+      <div class="login-grid" id="loginGrid"></div>
     </div>
-    <div class="login-grid" id="loginGrid"></div>
-  </div>
-  <div class="quick-box">
-    <div class="quick-box-title">📌 その他のメニュー</div>
-    <div class="qlink-grid">
-      <button class="qlink-btn" onclick="openToday()"><span class="qi">📋</span>本日の予定</button>
-      <button class="qlink-btn" onclick="openMap()"><span class="qi">📍</span>土庄町地図</button>
-      <button class="qlink-btn" onclick="openSettings()"><span class="qi">⚙</span>設定</button>
+    <div class="quick-col">
+      <button class="quick-box" onclick="openToday()"><span class="qi">📋</span><span class="ql-label">本日の予定</span></button>
+      <button class="quick-box" onclick="openMap()"><span class="qi">📍</span><span class="ql-label">土庄町地図</span></button>
+      <button class="quick-box" onclick="openSettings()"><span class="qi">⚙</span><span class="ql-label">設定</span></button>
     </div>
   </div>
 </div>
