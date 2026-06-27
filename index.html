@@ -426,6 +426,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <input type="password" id="newPwInp2" placeholder="もう一度入力" autocomplete="new-password">
     </div>
     <div id="pwChangeErr" style="font-size:.75rem;color:var(--red);min-height:1.2em;margin-bottom:4px"></div>
+    <button onclick="removePw()" style="width:100%;padding:10px;background:#FEE2E2;color:#B91C1C;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;margin-bottom:10px">🔓 パスワードを解除する</button>
     <div class="sbtns">
       <button class="sbtn sbtn-cancel" onclick="closeSettings()">キャンセル</button>
       <button class="sbtn sbtn-save" onclick="saveSettings()">保存する（全員に反映）</button>
@@ -981,6 +982,19 @@ window.openSettings=function(){
   document.getElementById('settingsBg').classList.add('show');
 };
 window.closeSettings=function(){document.getElementById('settingsBg').classList.remove('show')};
+window.removePw = async function() {
+  if (!confirm('パスワードを解除しますか？\n解除すると誰でもアクセスできるようになります。')) return;
+  await fbSet(DB_PASSWORD, null);
+  storedPasswordHash = null;
+  sessionStorage.removeItem('cal_pw_ok');
+  sessionStorage.removeItem('pw_attempts');
+  sessionStorage.removeItem('pw_lock_until');
+  document.getElementById('newPwInp').value = '';
+  document.getElementById('newPwInp2').value = '';
+  document.getElementById('pwChangeErr').textContent = '';
+  showToast('🔓 パスワードを解除しました');
+};
+
 window.saveSettings=async function(){
   members=members.map((_,i)=>document.getElementById('sn'+i).value.trim());
   // パスワード変更
