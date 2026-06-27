@@ -70,6 +70,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .login-links{display:flex;gap:14px;justify-content:center}
 .llink{background:none;border:none;cursor:pointer;font-size:.75rem;color:#9AB0D0;text-decoration:underline;font-family:inherit;padding:0}
 .llink:hover{color:var(--blue)}
+.qlink-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.qlink-btn{padding:13px 6px;border-radius:10px;border:2px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:.78rem;font-weight:600;color:var(--navy);transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:5px}
+.qlink-btn:hover{border-color:var(--blue);background:var(--sky);color:var(--blue)}
+.qlink-btn .qi{font-size:1.4rem}
 
 /* ── アプリ ── */
 #appScreen{display:none}
@@ -315,10 +319,10 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <button class="ly-btn" onclick="changeYear(1)">▶</button>
     </div>
     <div class="login-grid" id="loginGrid"></div>
-    <div class="login-links">
-      <button class="llink" onclick="openToday()">📋 本日の予定表</button>
-      <button class="llink" onclick="openMap()">📍 土庄町マップ</button>
-      <button class="llink" onclick="openSettings()">⚙ メンバー設定</button>
+    <div class="qlink-grid">
+      <button class="qlink-btn" onclick="openToday()"><span class="qi">📋</span>本日の予定</button>
+      <button class="qlink-btn" onclick="openMap()"><span class="qi">📍</span>土庄町地図</button>
+      <button class="qlink-btn" onclick="openSettings()"><span class="qi">⚙</span>設定</button>
     </div>
   </div>
 </div>
