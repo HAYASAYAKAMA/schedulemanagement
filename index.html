@@ -403,7 +403,14 @@ function saveFirebaseConfig() {
 }
 window.saveFirebaseConfig = saveFirebaseConfig;
 
-const fbConfig = getFirebaseConfig();
+const fbConfig = {
+  apiKey: "AIzaSyCZLWATdimsfygT2z0y15q3ZEF1RwI3oWw",
+  authDomain: "schedulemanagement-32904.firebaseapp.com",
+  databaseURL: "https://schedulemanagement-32904-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "schedulemanagement-32904",
+  storageBucket: "schedulemanagement-32904.appspot.com",
+  appId: "1:630989878288:web:cbedc72e9fbd3295a50695"
+};
 if (!fbConfig) {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('setupScreen').style.display = 'flex';
