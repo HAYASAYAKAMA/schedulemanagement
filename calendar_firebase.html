@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>行動予定カレンダー（共有版）</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1B2A4A;--blue:#2D6BE4;--sky:#E8F0FE;
+  --red:#E03E3E;--green:#16A34A;--border:#D1D9E6;--text:#1B2A4A;
+  --muted:#7A8BAA;--white:#FFFFFF;--bg:#F3F6FC;
+}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── ローディング ── */
+#loadingScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%);gap:18px}
+#loadingScreen p{color:#fff;font-size:.95rem;font-weight:500;opacity:.85}
+.spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 設定画面 ── */
+#setupScreen{display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)}
+.setup-box{background:#fff;border-radius:20px;padding:36px 28px;width:440px;max-width:95vw;box-shadow:0 24px 80px rgba(27,42,74,.35)}
+.setup-box h1{font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:6px}
+.setup-box p{font-size:.8rem;color:var(--muted);margin-bottom:18px;line-height:1.6}
+.setup-inp{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;font-size:.9rem;color:var(--navy);outline:none;margin-bottom:10px;transition:border .15s}
+.setup-inp:focus{border-color:var(--blue)}
+.setup-inp::placeholder{color:#B0BDD4}
+.setup-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:4px;transition:background .15s}
+.setup-btn:hover{background:#1a56cb}
+.setup-note{font-size:.72rem;color:var(--muted);margin-top:14px;padding:10px 14px;background:var(--bg);border-radius:8px;line-height:1.7}
+.setup-note strong{color:var(--navy)}
+
+/* ── パスワード画面 ── */
+#passwordScreen{display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)}
+.pw-box{background:#fff;border-radius:20px;padding:38px 30px;width:400px;max-width:95vw;box-shadow:0 24px 80px rgba(27,42,74,.35);text-align:center}
+.pw-box .lock-icon{font-size:2.8rem;margin-bottom:12px}
+.pw-box h1{font-size:1.15rem;font-weight:700;color:var(--navy);margin-bottom:6px}
+.pw-box p{font-size:.8rem;color:var(--muted);margin-bottom:22px;line-height:1.6}
+.pw-inp{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:1rem;color:var(--navy);outline:none;margin-bottom:10px;text-align:center;letter-spacing:.15em;transition:border .15s}
+.pw-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(45,107,228,.12)}
+.pw-inp.error{border-color:var(--red);animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pw-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:4px;transition:background .15s}
+.pw-btn:hover{background:#1a56cb}
+.pw-err{font-size:.8rem;color:var(--red);margin-top:8px;min-height:1.2em;font-weight:500}
+.pw-hint{font-size:.72rem;color:var(--muted);margin-top:16px;padding:10px 14px;background:var(--bg);border-radius:8px;line-height:1.7}
+
+/* ── ログイン ── */
+#loginScreen{display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)}
+.login-box{background:#fff;border-radius:20px;padding:38px 30px;width:420px;max-width:95vw;box-shadow:0 24px 80px rgba(27,42,74,.35)}
+.login-box h1{font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:4px}
+.login-box>p{font-size:.8rem;color:var(--muted);margin-bottom:10px}
+.cloud-badge{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;color:#16A34A;background:#DCFCE7;border-radius:5px;padding:3px 9px;font-weight:600;margin-bottom:16px}
+.pulse{width:7px;height:7px;border-radius:50%;background:#16A34A;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.login-year{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:18px}
+.ly-btn{background:var(--bg);border:2px solid var(--border);color:var(--navy);border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:.78rem;cursor:pointer;transition:all .15s}
+.ly-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--sky)}
+.ly-lbl{font-size:.9rem;font-weight:700;color:var(--navy);min-width:88px;text-align:center}
+.login-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.login-btn{padding:13px 8px;border-radius:10px;border:2px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:.88rem;font-weight:500;color:var(--navy);transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.login-btn:hover{border-color:var(--blue);background:var(--sky);color:var(--blue)}
+.login-btn .av{font-size:1.5rem}
+.login-btn .nm{font-size:.82rem;font-weight:700}
+.login-btn .sb{font-size:.68rem;color:var(--muted)}
+.login-links{display:flex;gap:14px;justify-content:center}
+.llink{background:none;border:none;cursor:pointer;font-size:.75rem;color:#9AB0D0;text-decoration:underline;font-family:inherit;padding:0}
+.llink:hover{color:var(--blue)}
+
+/* ── アプリ ── */
+#appScreen{display:none}
+header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(27,42,74,.3)}
+.h-left h1{font-size:.98rem;font-weight:700;color:#fff}
+.h-left p{font-size:.68rem;color:#9AB0D0;margin-top:1px}
+.h-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ys{display:flex;align-items:center;gap:4px}
+.ys-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:5px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer}
+.ys-btn:hover{background:rgba(255,255,255,.3)}
+.ys-lbl{font-size:.8rem;font-weight:700;color:#fff;min-width:60px;text-align:center}
+.hbtn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:7px;padding:5px 11px;font-family:inherit;font-size:.75rem;cursor:pointer;white-space:nowrap}
+.hbtn:hover{background:rgba(255,255,255,.28)}
+
+/* ── 同期バー ── */
+.sync-bar{padding:5px 18px;font-size:.72rem;display:flex;align-items:center;gap:6px}
+.sync-bar.saving{background:#E8F0FE;border-bottom:1px solid #B5D4F4;color:#185FA5}
+.sync-bar.saved{background:#DCFCE7;border-bottom:1px solid #86EFAC;color:#14532D}
+.sync-bar.recv{background:#FEF9C3;border-bottom:1px solid #FDE68A;color:#92400E}
+.sync-bar.err{background:#FEE2E2;border-bottom:1px solid #FECACA;color:#991B1B}
+.sync-bar.hidden{display:none}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1s infinite}
+
+/* ── 人物タブ ── */
+.person-nav{background:#f0f4ff;border-bottom:1px solid var(--border);padding:0 12px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;align-items:center}
+.person-nav::-webkit-scrollbar{display:none}
+.ptab{padding:9px 12px;font-size:.78rem;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:4px}
+.ptab:hover{color:var(--blue)}
+.ptab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:700}
+.ptab.me.active{color:var(--green);border-bottom-color:var(--green)}
+.ptab.me{color:#15803D}
+.me-badge{font-size:.6rem;background:var(--green);color:#fff;border-radius:3px;padding:1px 4px;font-weight:700}
+.ro-banner{background:#FEF9C3;border-bottom:1px solid #FDE68A;padding:5px 18px;font-size:.76rem;color:#92400E;text-align:center}
+
+/* ── 月タブ ── */
+.month-nav{background:#fff;border-bottom:1px solid var(--border);padding:0 16px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.month-nav::-webkit-scrollbar{display:none}
+.mtab{padding:10px 12px;font-size:.78rem;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .15s}
+.mtab:hover{color:var(--blue)}
+.mtab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:700}
+
+/* ── カレンダー ── */
+.cal-wrap{padding:16px 18px;max-width:1400px;margin:0 auto}
+.month-title{font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:baseline;gap:7px}
+.month-title span{font-size:.76rem;font-weight:400;color:var(--muted)}
+.legend{display:flex;align-items:center;gap:12px;margin-bottom:9px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:4px;font-size:.7rem;color:var(--muted)}
+.ld{width:8px;height:8px;border-radius:50%}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{text-align:center;padding:7px 2px;font-size:.7rem;font-weight:700;border-radius:5px 5px 0 0}
+.dow.wd{background:#E8EDFB;color:#4B6CB7}
+.dow.sat{background:#DBEAFE;color:#1D4ED8}
+.dow.sun{background:#FEE2E2;color:#B91C1C}
+.dc{background:#fff;border:1px solid var(--border);border-radius:7px;min-height:195px;display:flex;flex-direction:column;overflow:hidden;transition:box-shadow .15s}
+.dc:hover{box-shadow:0 2px 10px rgba(45,107,228,.12)}
+.dc.empty{background:#F7F9FC;border-color:#E8ECF4;pointer-events:none}
+.dc.sat{background:#F0F7FF}
+.dc.sun{background:#FFF5F5}
+.dc.hol{background:#FFF0F0;border-color:#FECACA}
+.dc.sub{background:#FFFBEB;border-color:#FDE68A}
+.dc.today .dn{background:var(--blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.dh{padding:5px 6px 2px;display:flex;align-items:flex-start;justify-content:space-between;gap:3px}
+.dn{font-size:.78rem;font-weight:700;color:var(--navy);flex-shrink:0}
+.dc.sat .dn{color:#1D4ED8}
+.dc.sun .dn{color:#B91C1C}
+.dc.hol .dn{color:#DC2626}
+.dc.sub .dn{color:#D97706}
+.hname{font-size:.56rem;font-weight:600;color:#DC2626;background:#FEE2E2;border-radius:3px;padding:1px 3px;text-align:right;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88px}
+.hname.sub{color:#92400E;background:#FEF3C7}
+.db{flex:1;padding:0 5px 5px;display:flex;flex-direction:column;gap:3px}
+.es{display:grid;grid-template-columns:3rem 3rem 1fr;gap:2px;background:var(--sky);border-radius:4px;padding:2px 4px}
+.es.filled{background:#FEF9C3}
+.es input{border:none;background:transparent;width:100%;font-size:.63rem;font-family:inherit;color:var(--text);outline:none;min-width:0}
+.es input::placeholder{color:#B0BDD4;font-size:.57rem}
+.es.filled input{color:#78350F}
+.es.ro input{pointer-events:none}
+.ememo{font-size:.63rem;color:var(--muted);background:#FAFBFF;border:1px dashed var(--border);border-radius:4px;padding:2px 4px}
+.ememo input{border:none;background:transparent;width:100%;font-size:.63rem;font-family:inherit;color:#7A8BAA;outline:none}
+.ememo input::placeholder{color:#C8D0DF}
+.ememo.ro input{pointer-events:none}
+
+/* ── スマホ日付モーダル ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(27,42,74,.5);z-index:600;align-items:flex-end;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:18px 18px 0 0;padding:22px 18px 36px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-title{font-size:1rem;font-weight:700;color:var(--navy)}
+.modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted);line-height:1;padding:4px}
+.m-lbl{font-size:.7rem;color:var(--muted);margin-bottom:3px;font-weight:500}
+.m-row{display:grid;grid-template-columns:76px 76px 1fr;gap:6px;margin-bottom:8px}
+.m-inp{border:1px solid var(--border);background:#fff;border-radius:8px;padding:9px 11px;font-size:.88rem;font-family:inherit;color:var(--text);outline:none;width:100%;transition:border .15s}
+.m-inp:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(45,107,228,.15)}
+.m-inp::placeholder{color:#B0BDD4}
+.m-inp.ro{pointer-events:none;background:var(--bg);color:var(--muted)}
+.m-sep{height:1px;background:var(--border);margin:12px 0}
+.m-memo{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:.88rem;font-family:inherit;color:var(--muted);outline:none;resize:none;height:60px}
+.m-memo:focus{border-color:var(--blue)}
+.m-memo.ro{pointer-events:none;background:var(--bg)}
+.m-save{width:100%;margin-top:14px;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:.92rem;font-weight:700;cursor:pointer}
+.m-save:hover{background:#1a56cb}
+
+/* ── 本日の予定 ── */
+#todayScreen{display:none}
+.today-wrap{padding:16px 18px;max-width:1200px;margin:0 auto}
+.today-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.today-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.today-name{font-size:.92rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:5px;margin-bottom:9px}
+.trow{display:flex;align-items:baseline;gap:7px;background:var(--sky);border-radius:5px;padding:5px 9px;font-size:.78rem;margin-bottom:4px}
+.ttime{font-weight:700;color:var(--blue);flex-shrink:0;min-width:78px}
+.tcont{color:var(--text);word-break:break-word}
+.tnone{background:#F7F9FC;color:var(--muted);font-size:.78rem;text-align:center;padding:6px;border-radius:5px;margin-bottom:4px}
+.tmemo{font-size:.72rem;color:var(--muted);background:#FAFBFF;border:1px dashed var(--border);border-radius:5px;padding:5px 8px;margin-top:4px}
+
+/* ── 設定 ── */
+.settings-bg{display:none;position:fixed;inset:0;background:rgba(27,42,74,.5);z-index:600;align-items:center;justify-content:center}
+.settings-bg.show{display:flex}
+.settings-box{background:#fff;border-radius:16px;padding:26px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(27,42,74,.3)}
+.settings-box h2{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:4px}
+.settings-box>p{font-size:.76rem;color:var(--muted);margin-bottom:16px;line-height:1.6}
+.srow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.srow label{font-size:.76rem;color:var(--muted);width:50px;flex-shrink:0}
+.srow input{flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.88rem;color:var(--navy);outline:none;transition:border .15s}
+.srow input:focus{border-color:var(--blue)}
+.sbtns{display:flex;gap:9px;margin-top:18px}
+.sbtn{flex:1;padding:11px;border-radius:8px;border:none;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer}
+.sbtn-cancel{background:var(--bg);color:var(--muted)}
+.sbtn-save{background:var(--blue);color:#fff}
+
+/* ── トースト ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:11px 22px;border-radius:10px;font-size:.85rem;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:1000;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
+
+/* ── スマホ専用 ── */
+@media(max-width:700px){
+  .cal-grid{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+  .dc{min-height:48px;cursor:pointer;border-radius:5px}
+  .db{display:none}
+  .cal-wrap{padding:8px 10px}
+  header{padding:10px 12px}
+  .h-left h1{font-size:.88rem}
+  .hname{display:none}
+  .ptab{padding:8px 9px;font-size:.73rem}
+  .mtab{padding:8px 10px;font-size:.73rem}
+  .today-wrap{padding:10px}
+  .today-grid{grid-template-columns:1fr}
+  .dc.has-data .dn::after{content:'●';font-size:.45rem;color:var(--blue);vertical-align:super;margin-left:2px}
+  .login-box{padding:30px 20px}
+}
+@media(min-width:701px){
+  .modal-bg{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ローディング -->
+<div id="loadingScreen">
+  <div class="spinner"></div>
+  <p>カレンダーを読み込み中...</p>
+</div>
+
+<!-- Firebase未設定時の設定画面 -->
+<div id="setupScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)">
+  <div class="setup-box">
+    <h1>🔧 Firebase設定</h1>
+    <p>初回のみ、FirebaseのプロジェクトIDとAPIキーを入力してください。<br>設定後はこの画面は表示されません。</p>
+    <input class="setup-inp" id="inp-projectId" placeholder="プロジェクトID（例: my-calendar-12345）" autocomplete="off">
+    <input class="setup-inp" id="inp-apiKey" placeholder="APIキー（例: AIzaSy...）" autocomplete="off">
+    <input class="setup-inp" id="inp-appId" placeholder="アプリID（例: 1:123456789:web:abc...）" autocomplete="off">
+    <input class="setup-inp" id="inp-password" type="password" placeholder="アクセスパスワード（省略可）" autocomplete="new-password">
+    <button class="setup-btn" onclick="saveFirebaseConfig()">💾 設定を保存して開始</button>
+    <div class="setup-note">
+      <strong>設定値の確認場所：</strong><br>
+      Firebase Console → プロジェクトの設定 → マイアプリ → Firebase SDK設定<br>
+      「firebaseConfig」の中の値をコピーしてください。<br><br>
+      <strong>パスワード：</strong>設定するとアクセス時にパスワード入力が必要になります。後から変更するには「⚙ 設定」から行えます。
+    </div>
+  </div>
+</div>
+
+<!-- パスワード認証 -->
+<div id="passwordScreen">
+  <div class="pw-box">
+    <div class="lock-icon">🔒</div>
+    <h1>アクセス制限</h1>
+    <p>このカレンダーはパスワードで保護されています。<br>パスワードを入力してください。</p>
+    <input class="pw-inp" type="password" id="pwInput" placeholder="パスワードを入力"
+      onkeydown="if(event.key==='Enter')checkPassword()" autocomplete="current-password">
+    <button class="pw-btn" onclick="checkPassword()">🔓 入室する</button>
+    <div class="pw-err" id="pwErr"></div>
+    <div class="pw-hint">※ パスワードが分からない場合は管理者にお問い合わせください</div>
+  </div>
+</div>
+
+<!-- ログイン -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h1 id="loginTitle">📅 行動予定カレンダー</h1>
+    <p>あなたの名前を選んでください</p>
+    <div class="cloud-badge"><span class="pulse"></span>Firebaseでリアルタイム共有中</div>
+    <div class="login-year">
+      <button class="ly-btn" onclick="changeYear(-1)">◀</button>
+      <span class="ly-lbl" id="loginYearLabel">2026年度</span>
+      <button class="ly-btn" onclick="changeYear(1)">▶</button>
+    </div>
+    <div class="login-grid" id="loginGrid"></div>
+    <div class="login-links">
+      <button class="llink" onclick="openToday()">📋 本日の予定表</button>
+      <button class="llink" onclick="openSettings()">⚙ メンバー設定</button>
+    </div>
+  </div>
+</div>
+
+<!-- メインアプリ -->
+<div id="appScreen">
+  <header>
+    <div class="h-left">
+      <h1 id="mainTitle">📅 行動予定カレンダー</h1>
+      <p id="fySubtitle">Firebase リアルタイム共有</p>
+    </div>
+    <div class="h-right">
+      <div class="ys">
+        <button class="ys-btn" onclick="changeYear(-1)">◀</button>
+        <span class="ys-lbl" id="appYearLabel">2026年度</span>
+        <button class="ys-btn" onclick="changeYear(1)">▶</button>
+      </div>
+      <button class="hbtn" onclick="openToday()">📋 本日</button>
+      <button class="hbtn" onclick="openSettings()">⚙ 設定</button>
+      <button class="hbtn" onclick="logout()">← 戻る</button>
+    </div>
+  </header>
+  <div class="sync-bar hidden" id="syncBar"><span class="sdot"></span><span id="syncMsg"></span></div>
+  <div class="person-nav" id="personNav"></div>
+  <div id="roBanner" class="ro-banner" style="display:none">👁 閲覧モード — この予定は編集できません</div>
+  <nav class="month-nav" id="monthNav"></nav>
+  <main class="cal-wrap">
+    <div class="month-title" id="monthTitle"></div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#2563EB"></div>土曜</div>
+      <div class="li"><div class="ld" style="background:#DC2626"></div>日曜</div>
+      <div class="li"><div class="ld" style="background:#E03E3E"></div>祝日</div>
+      <div class="li"><div class="ld" style="background:#F59E0B"></div>振替休日</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </main>
+  <footer>データはFirebaseにリアルタイム保存・共有されます　|　祝日は内閣府告示に基づく計算値</footer>
+</div>
+
+<!-- 本日の予定 -->
+<div id="todayScreen">
+  <header>
+    <div class="h-left">
+      <h1>📋 本日の行動予定表</h1>
+      <p id="todayDateLabel"> </p>
+    </div>
+    <button class="hbtn" onclick="closeToday()">← 戻る</button>
+  </header>
+  <div class="today-wrap"><div class="today-grid" id="todayWrapper"></div></div>
+</div>
+
+<!-- 日付モーダル（スマホ用） -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- 設定パネル -->
+<div class="settings-bg" id="settingsBg" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-box">
+    <h2>⚙ メンバー名の設定</h2>
+    <p>最大10名まで登録できます。空欄のメンバーはログイン画面に表示されません。<br>設定はFirebaseに保存され全員に即座に反映されます。</p>
+    <div id="settingsRows"></div>
+    <div style="border-top:1px solid var(--border);margin:18px 0 14px"></div>
+    <h2 style="margin-bottom:6px">🔒 アクセスパスワード</h2>
+    <p style="font-size:.76rem;color:var(--muted);margin-bottom:12px;line-height:1.6">パスワードを設定・変更します。空欄にして保存するとパスワードなしになります。</p>
+    <div class="srow">
+      <label style="width:70px;font-size:.74rem">新しいPW</label>
+      <input type="password" id="newPwInp" placeholder="新しいパスワード（空欄で解除）" autocomplete="new-password">
+    </div>
+    <div class="srow">
+      <label style="width:70px;font-size:.74rem">確認</label>
+      <input type="password" id="newPwInp2" placeholder="もう一度入力" autocomplete="new-password">
+    </div>
+    <div id="pwChangeErr" style="font-size:.75rem;color:var(--red);min-height:1.2em;margin-bottom:4px"></div>
+    <div class="sbtns">
+      <button class="sbtn sbtn-cancel" onclick="closeSettings()">キャンセル</button>
+      <button class="sbtn sbtn-save" onclick="saveSettings()">保存する（全員に反映）</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, child } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ═══ Firebase設定の読み込み ═══════════════════════════════════
+function getFirebaseConfig() {
+  try {
+    const raw = localStorage.getItem('cal_firebase_config');
+    if (raw) return JSON.parse(raw);
+  } catch(e){}
+  return null;
+}
+function saveFirebaseConfig() {
+  const projectId = document.getElementById('inp-projectId').value.trim();
+  const apiKey = document.getElementById('inp-apiKey').value.trim();
+  const appId = document.getElementById('inp-appId').value.trim();
+  const password = document.getElementById('inp-password').value.trim();
+  if (!projectId || !apiKey || !appId) { alert('プロジェクトID・APIキー・アプリIDは必須です'); return; }
+  const cfg = {
+    apiKey,
+    authDomain: `${projectId}.firebaseapp.com`,
+    databaseURL: `https://${projectId}-default-rtdb.firebaseio.com`,
+    projectId,
+    storageBucket: `${projectId}.appspot.com`,
+    appId
+  };
+  localStorage.setItem('cal_firebase_config', JSON.stringify(cfg));
+  if (password) localStorage.setItem('cal_pw_verified', '');
+  else localStorage.setItem('cal_pw_verified', 'nopw');
+  location.reload();
+}
+window.saveFirebaseConfig = saveFirebaseConfig;
+
+const fbConfig = getFirebaseConfig();
+if (!fbConfig) {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'flex';
+  // 以降の処理はしない
+} else {
+  startApp(fbConfig);
+}
+
+async function startApp(fbConfig) {
+  let app, db;
+  try {
+    app = initializeApp(fbConfig);
+    db = getDatabase(app);
+  } catch(e) {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('setupScreen').style.display = 'flex';
+    showToast('❌ Firebase接続に失敗しました。設定を確認してください。');
+    return;
+  }
+
+// ═══ 祝日計算 ═══════════════════════════════════════════════
+function calcEquinox(year, isAutumn) {
+  if (isAutumn) return Math.floor(23.2488 + 0.242194*(year-1980) - Math.floor((year-1980)/4));
+  return Math.floor(20.8431 + 0.242194*(year-1980) - Math.floor((year-1980)/4));
+}
+function getJapaneseHolidays(year) {
+  const h = {};
+  function add(m,d,name) {
+    if (d<1||d>31) return;
+    const key=`${year}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (!h[key]) h[key]={name,type:'holiday'};
+  }
+  function nthMonday(m,nth) {
+    let c=0;
+    for (let d=1;d<=31;d++) {
+      const dt=new Date(year,m-1,d);
+      if (dt.getMonth()!==m-1) break;
+      if (dt.getDay()===1){c++;if(c===nth)return d;}
+    }
+    return -1;
+  }
+  add(1,1,'元日'); add(2,11,'建国記念の日'); add(2,23,'天皇誕生日');
+  add(4,29,'昭和の日'); add(5,3,'憲法記念日'); add(5,4,'みどりの日');
+  add(5,5,'こどもの日'); add(8,11,'山の日'); add(11,3,'文化の日'); add(11,23,'勤労感謝の日');
+  add(1,nthMonday(1,2),'成人の日'); add(7,nthMonday(7,3),'海の日');
+  add(9,nthMonday(9,3),'敬老の日'); add(10,nthMonday(10,2),'スポーツの日');
+  add(3,calcEquinox(year,false),'春分の日'); add(9,calcEquinox(year,true),'秋分の日');
+  const keys=Object.keys(h).sort(), extra={};
+  for (const key of keys) {
+    const [y,m,d]=key.split('-').map(Number);
+    if (new Date(year,m-1,d).getDay()===0) {
+      let off=1;
+      for (let i=0;i<7;i++) {
+        const nd=new Date(year,m-1,d+off);
+        const nk=`${year}-${String(nd.getMonth()+1).padStart(2,'0')}-${String(nd.getDate()).padStart(2,'0')}`;
+        if (nd.getDay()!==0&&!h[nk]&&!extra[nk]){extra[nk]={name:'振替休日',type:'substitute'};break;}
+        off++;
+      }
+    }
+  }
+  const combined={...h,...extra}, allKeys=Object.keys(combined).sort();
+  for (let i=1;i<allKeys.length-1;i++) {
+    const pd=new Date(allKeys[i-1]),cd=new Date(allKeys[i]),nd_=new Date(allKeys[i+1]);
+    if ((cd-pd)===86400000&&(nd_-cd)===86400000&&!combined[allKeys[i]]) {
+      const wd=cd.getDay();
+      if (wd!==0&&wd!==6) extra[allKeys[i]]={name:'国民の休日',type:'substitute'};
+    }
+  }
+  return {...h,...extra};
+}
+
+// ═══ 定数 ══════════════════════════════════════════════════
+const AVATARS=['🧑','👩','👨','🧒','👧','👦','🧓','👴','👵','🧑‍💼'];
+const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const FY_LBL=['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月'];
+const DAYS_JP=['月','火','水','木','金','土','日'];
+function buildFY(y){return[{y,m:3},{y,m:4},{y,m:5},{y,m:6},{y,m:7},{y,m:8},{y,m:9},{y,m:10},{y,m:11},{y:y+1,m:0},{y:y+1,m:1},{y:y+1,m:2}]}
+
+// ═══ 状態 ══════════════════════════════════════════════════
+let members=Array(10).fill('');
+let myIndex=-1, viewIndex=-1, fyYear=2026;
+let FY_MONTHS=buildFY(fyYear), currentFYIndex=0;
+let allData={};
+let holidayCache={};
+let todayCameFrom='login';
+let unsubscribeData=null, unsubscribeMembers=null;
+
+// ═══ ユーティリティ ════════════════════════════════════════
+function dateKey(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function getDays(y,m){return new Date(y,m+1,0).getDate()}
+function getFirstDow(y,m){return(new Date(y,m,1).getDay()+6)%7}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtTime(v){v=String(v||'');return/^\d{4}$/.test(v)?v.slice(0,2)+':'+v.slice(2):v}
+function fmtTI(el){if(/^\d{4}$/.test(el.value))el.value=el.value.slice(0,2)+':'+el.value.slice(2)}
+function getHols(y){if(!holidayCache[y])holidayCache[y]=getJapaneseHolidays(y);return holidayCache[y]}
+function defaultFYIndex(){const now=new Date();const idx=FY_MONTHS.findIndex(e=>e.y===now.getFullYear()&&e.m===now.getMonth());return idx>=0?idx:0}
+
+// ═══ Firebase DB操作 ═══════════════════════════════════════
+const DB_MEMBERS = 'members';
+const DB_PASSWORD = 'app_password';
+function dbDataKey(yr){return`data_${yr}`}
+
+async function fbGet(path){
+  try{const snap=await get(ref(db,path));return snap.exists()?snap.val():null}catch(e){return null}
+}
+async function fbSet(path,val){
+  try{await set(ref(db,path),val);return true}catch(e){showSyncBar('err','❌ 保存に失敗しました');return false}
+}
+function fbListen(path, cb){
+  const r=ref(db,path);
+  const unsub=onValue(r,(snap)=>cb(snap.exists()?snap.val():null));
+  return unsub;
+}
+
+// ═══ 同期バー ══════════════════════════════════════════════
+let syncBarTimer=null;
+function showSyncBar(type,msg){
+  const bar=document.getElementById('syncBar');
+  bar.className='sync-bar '+type;
+  document.getElementById('syncMsg').textContent=msg;
+  if(syncBarTimer)clearTimeout(syncBarTimer);
+  if(type!=='saving')syncBarTimer=setTimeout(()=>bar.className='sync-bar hidden',3000);
+}
+window.showSyncBar=showSyncBar;
+
+// ═══ パスワード ════════════════════════════════════════════
+let storedPasswordHash = null;
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function loadPassword() {
+  const raw = await fbGet(DB_PASSWORD);
+  storedPasswordHash = raw || null;
+}
+
+window.checkPassword = async function() {
+  const inp = document.getElementById('pwInput');
+  const err = document.getElementById('pwErr');
+  const val = inp.value;
+  if (!val) { err.textContent = 'パスワードを入力してください'; inp.classList.add('error'); setTimeout(()=>inp.classList.remove('error'),400); return; }
+  const hash = await sha256(val);
+  if (hash === storedPasswordHash) {
+    sessionStorage.setItem('cal_pw_ok', '1');
+    document.getElementById('passwordScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    err.textContent = '';
+    inp.value = '';
+  } else {
+    err.textContent = '❌ パスワードが違います';
+    inp.classList.add('error');
+    inp.value = '';
+    setTimeout(()=>inp.classList.remove('error'), 400);
+  }
+};
+
+async function showPasswordScreenIfNeeded() {
+  await loadPassword();
+  if (!storedPasswordHash) {
+    // パスワード未設定 → そのままログイン画面へ
+    return false;
+  }
+  // セッション内で既に認証済みか
+  if (sessionStorage.getItem('cal_pw_ok') === '1') return false;
+  // パスワード画面を表示
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('passwordScreen').style.display = 'flex';
+  return true;
+}
+
+// ═══ データロード・リスナー ════════════════════════════════
+async function initData(){
+  // メンバー
+  const mraw=await fbGet(DB_MEMBERS);
+  if(mraw)members=mraw; else members=Array(10).fill('');
+  // データ
+  const draw=await fbGet(dbDataKey(fyYear));
+  if(draw){allData=draw.allData||{};if(draw.fyIndex!=null)currentFYIndex=draw.fyIndex;}
+  else allData={};
+}
+
+function startListeners(){
+  if(unsubscribeMembers)unsubscribeMembers();
+  if(unsubscribeData)unsubscribeData();
+
+  // メンバーのリアルタイム監視
+  unsubscribeMembers=fbListen(DB_MEMBERS,(val)=>{
+    if(val){
+      const newM=val;
+      if(JSON.stringify(newM)!==JSON.stringify(members)){
+        members=newM;
+        renderLoginScreen();
+        if(myIndex>=0)renderPersonTabs();
+        showSyncBar('recv','👥 メンバー情報が更新されました');
+      }
+    }
+  });
+
+  // データのリアルタイム監視
+  unsubscribeData=fbListen(dbDataKey(fyYear),(val)=>{
+    if(val){
+      const newData=val.allData||{};
+      // 自分のデータ以外が変わったか確認
+      const changed=Object.keys(newData).some(i=>{
+        if(parseInt(i)===myIndex)return false;
+        return JSON.stringify(newData[i])!==JSON.stringify(allData[i]);
+      });
+      allData=newData;
+      if(changed){
+        showSyncBar('recv','📡 他のメンバーの予定が更新されました');
+        if(document.getElementById('appScreen').style.display==='block')renderCalendar();
+      }
+    }
+  });
+}
+function stopListeners(){
+  if(unsubscribeMembers)unsubscribeMembers();
+  if(unsubscribeData)unsubscribeData();
+  unsubscribeMembers=null;unsubscribeData=null;
+}
+
+// ═══ 保存 ══════════════════════════════════════════════════
+let saveTimer=null;
+function debounceSave(){
+  showSyncBar('saving','💾 保存中...');
+  if(saveTimer)clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    const ok=await fbSet(dbDataKey(fyYear),{fyIndex:currentFYIndex,allData});
+    if(ok)showSyncBar('saved','✅ 保存しました');
+  },1000);
+}
+
+// ═══ 年度切替 ══════════════════════════════════════════════
+async function changeYear(delta){
+  const ny=fyYear+delta;
+  if(ny<2000||ny>2100)return;
+  stopListeners();
+  fyYear=ny;FY_MONTHS=buildFY(fyYear);currentFYIndex=defaultFYIndex();
+  const draw=await fbGet(dbDataKey(fyYear));
+  if(draw){allData=draw.allData||{};if(draw.fyIndex!=null)currentFYIndex=draw.fyIndex;}
+  else allData={};
+  updateYearLabels();
+  if(myIndex>=0){startListeners();render();}
+  else renderLoginScreen();
+}
+window.changeYear=changeYear;
+
+function updateYearLabels(){
+  const lbl=fyYear+'年度';
+  document.getElementById('loginTitle').textContent='📅 行動予定カレンダー '+lbl;
+  document.getElementById('loginYearLabel').textContent=lbl;
+  document.getElementById('appYearLabel').textContent=lbl;
+  const name=myIndex>=0&&members[myIndex]?members[myIndex]:'';
+  document.getElementById('mainTitle').textContent=name?`📅 ${name}の行動予定 ${lbl}`:`📅 行動予定カレンダー ${lbl}`;
+  document.getElementById('fySubtitle').textContent=`${fyYear}年4月〜${fyYear+1}年3月 | Firebase リアルタイム共有`;
+}
+
+// ═══ ログイン ══════════════════════════════════════════════
+function renderLoginScreen(){
+  const grid=document.getElementById('loginGrid');
+  const active=members.filter(n=>n&&n.trim());
+  if(!active.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#7A8BAA;font-size:.82rem;padding:18px 0">メンバーが登録されていません。<br>「メンバー設定」から登録してください。</div>';
+    return;
+  }
+  grid.innerHTML=members.map((name,i)=>{
+    if(!name||!name.trim())return'';
+    return`<button class="login-btn" onclick="login(${i})">
+      <span class="av">${AVATARS[i]}</span>
+      <span class="nm">${esc(name)}</span>
+      <span class="sb">タップしてログイン</span>
+    </button>`;
+  }).join('');
+}
+window.login=function(idx){
+  myIndex=idx;viewIndex=idx;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  startListeners();render();
+};
+window.logout=function(){
+  stopListeners();myIndex=-1;viewIndex=-1;
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  renderLoginScreen();
+};
+
+// ═══ レンダー ══════════════════════════════════════════════
+function render(){updateYearLabels();renderPersonTabs();renderMonthTabs();renderCalendar()}
+
+function renderPersonTabs(){
+  const nav=document.getElementById('personNav');
+  nav.innerHTML=members.map((name,i)=>{
+    if(!name||!name.trim())return'';
+    const isMe=i===myIndex,active=i===viewIndex?'active':'',meCls=isMe?'me':'';
+    const badge=isMe?'<span class="me-badge">自分</span>':'';
+    return`<button class="ptab ${active} ${meCls}" onclick="switchPerson(${i})">${AVATARS[i]} ${esc(name)}${badge}</button>`;
+  }).join('');
+}
+function renderMonthTabs(){
+  document.getElementById('monthNav').innerHTML=FY_MONTHS.map((_,i)=>
+    `<button class="mtab ${i===currentFYIndex?'active':''}" onclick="switchFY(${i})">${FY_LBL[i]}</button>`
+  ).join('');
+}
+
+function renderCalendar(){
+  const grid=document.getElementById('calGrid');
+  const title=document.getElementById('monthTitle');
+  const {y,m}=FY_MONTHS[currentFYIndex];
+  const hols=getHols(y);
+  const isRO=viewIndex!==myIndex;
+  const mdata=allData[viewIndex]||{};
+  document.getElementById('roBanner').style.display=isRO?'block':'none';
+  const vname=viewIndex>=0?members[viewIndex]:'';
+  title.innerHTML=`${y}年 ${MONTHS[m]} <span>${getDays(y,m)}日間${vname?'　—　'+vname+'さんの予定':''}</span>`;
+  let html=DAYS_JP.map((d,i)=>{const cls=i===5?'sat':i===6?'sun':'wd';return`<div class="dow ${cls}">${d}</div>`;}).join('');
+  const fd=getFirstDow(y,m),days=getDays(y,m);
+  const now=new Date(),isTM=now.getFullYear()===y&&now.getMonth()===m;
+  for(let i=0;i<fd;i++)html+=`<div class="dc empty"><div class="dh"><span class="dn"></span></div></div>`;
+  for(let d=1;d<=days;d++){
+    const dow=(fd+d-1)%7,key=dateKey(y,m,d),hol=hols[key],entry=mdata[key]||{};
+    let cellCls='';
+    if(hol)cellCls=hol.type==='substitute'?'sub':'hol';
+    else if(dow===5)cellCls='sat';else if(dow===6)cellCls='sun';
+    const todayCls=(isTM&&now.getDate()===d)?'today':'';
+    let hasCls='';
+    for(let s=1;s<=5;s++){if(entry['start'+s]||entry['end'+s]||entry['content'+s]){hasCls='has-data';break}}
+    if(!hasCls&&entry.memo)hasCls='has-data';
+    const holLbl=hol?`<span class="hname ${hol.type==='substitute'?'sub':''}">${hol.name}</span>`:'';
+    let slotsHtml='';
+    for(let s=1;s<=5;s++){
+      const filled=(entry['start'+s]||entry['end'+s]||entry['content'+s])?'filled':'';
+      const roCls=isRO?'ro':'';
+      const roAttr=isRO?'readonly tabindex="-1"':'';
+      slotsHtml+=`<div class="es ${filled} ${roCls}" id="es_${key}_${s}">
+        <input type="text" placeholder="開始" maxlength="5" inputmode="numeric" ${roAttr}
+          value="${esc(fmtTime(entry['start'+s]||''))}"
+          ${isRO?'':'oninput="fmtTI(this);upd(\''+key+'\',\'start'+s+'\',this.value,\'es_'+key+'_'+s+'\')"'}>
+        <input type="text" placeholder="終了" maxlength="5" inputmode="numeric" ${roAttr}
+          value="${esc(fmtTime(entry['end'+s]||''))}"
+          ${isRO?'':'oninput="fmtTI(this);upd(\''+key+'\',\'end'+s+'\',this.value,\'es_'+key+'_'+s+'\')"'}>
+        <input type="text" placeholder="内容" ${roAttr}
+          value="${esc(entry['content'+s]||'')}"
+          ${isRO?'':'oninput="upd(\''+key+'\',\'content'+s+'\',this.value,\'es_'+key+'_'+s+'\')"'}>
+      </div>`;
+    }
+    const memoHtml=`<div class="ememo ${isRO?'ro':''}">
+      <input type="text" placeholder="メモ" ${isRO?'readonly tabindex="-1"':''}
+        value="${esc(entry.memo||'')}"
+        ${isRO?'':'oninput="upd(\''+key+'\',\'memo\',this.value,null)"'}>
+    </div>`;
+    html+=`<div class="dc ${cellCls} ${todayCls} ${hasCls}" onclick="onDayClick('${key}')">
+      <div class="dh"><span class="dn">${d}</span>${holLbl}</div>
+      <div class="db">${slotsHtml}${memoHtml}</div>
+    </div>`;
+  }
+  const rem=(fd+days)%7;
+  if(rem!==0)for(let i=0;i<7-rem;i++)html+=`<div class="dc empty"><div class="dh"><span class="dn"></span></div></div>`;
+  grid.innerHTML=html;
+}
+
+// ═══ データ更新 ════════════════════════════════════════════
+window.upd=function(key,field,value,slotId){
+  if(!allData[myIndex])allData[myIndex]={};
+  if(!allData[myIndex][key])allData[myIndex][key]={};
+  allData[myIndex][key][field]=value;
+  if(slotId){const el=document.getElementById(slotId);if(el){const any=Array.from(el.querySelectorAll('input')).some(i=>i.value.trim());el.classList.toggle('filled',any);}}
+  debounceSave();
+};
+window.fmtTI=fmtTI;
+window.switchPerson=function(idx){viewIndex=idx;renderPersonTabs();renderCalendar()};
+window.switchFY=function(i){currentFYIndex=i;renderMonthTabs();renderCalendar();debounceSave()};
+
+// ═══ スマホ用モーダル ══════════════════════════════════════
+window.onDayClick=function(key){if(window.innerWidth>700)return;openModal(key)};
+function openModal(key){
+  const [y,m,d]=key.split('-').map(Number);
+  const hols=getHols(y),hol=hols[key],isRO=viewIndex!==myIndex;
+  const entry=(allData[viewIndex]||{})[key]||{};
+  const dow=new Date(y,m-1,d).getDay(),dowStr='日月火水木金土'[dow];
+  document.getElementById('modalTitle').textContent=`${y}年${m}月${d}日（${dowStr}）${hol?' 【'+hol.name+'】':''}`;
+  let body='';
+  for(let s=1;s<=5;s++){
+    body+=`<div style="margin-bottom:10px">
+      <div class="m-lbl">予定 ${s}</div>
+      <div class="m-row">
+        <input class="m-inp ${isRO?'ro':''}" id="mst${key}${s}" value="${esc(fmtTime(entry['start'+s]||''))}" placeholder="開始" maxlength="5" inputmode="numeric" ${isRO?'readonly':'oninput="fmtTI(this)"'}>
+        <input class="m-inp ${isRO?'ro':''}" id="men${key}${s}" value="${esc(fmtTime(entry['end'+s]||''))}" placeholder="終了" maxlength="5" inputmode="numeric" ${isRO?'readonly':'oninput="fmtTI(this)"'}>
+        <input class="m-inp ${isRO?'ro':''}" id="mco${key}${s}" value="${esc(entry['content'+s]||'')}" placeholder="内容を入力" ${isRO?'readonly':''}>
+      </div>
+    </div>`;
+  }
+  body+=`<div class="m-sep"></div><div class="m-lbl">メモ</div>
+    <textarea class="m-memo ${isRO?'ro':''}" id="mmo${key}" ${isRO?'readonly':''}>${esc(entry.memo||'')}</textarea>`;
+  if(!isRO)body+=`<button class="m-save" onclick="saveModal('${key}')">💾 保存する</button>`;
+  else body+=`<p style="font-size:.75rem;color:#7A8BAA;text-align:center;margin-top:12px">👁 閲覧モード</p>`;
+  document.getElementById('modalBody').innerHTML=body;
+  document.getElementById('modalBg').classList.add('show');
+}
+window.closeModal=function(){document.getElementById('modalBg').classList.remove('show')};
+window.saveModal=function(key){
+  if(!allData[myIndex])allData[myIndex]={};
+  if(!allData[myIndex][key])allData[myIndex][key]={};
+  const e=allData[myIndex][key];
+  for(let s=1;s<=5;s++){
+    e['start'+s]=document.getElementById('mst'+key+s)?.value||'';
+    e['end'+s]=document.getElementById('men'+key+s)?.value||'';
+    e['content'+s]=document.getElementById('mco'+key+s)?.value||'';
+  }
+  e.memo=document.getElementById('mmo'+key)?.value||'';
+  window.closeModal();renderCalendar();debounceSave();showToast('✅ 保存しました');
+};
+
+// ═══ 本日の予定表 ══════════════════════════════════════════
+window.openToday=function(){
+  todayCameFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('todayScreen').style.display='block';
+  renderToday();
+};
+window.closeToday=function(){
+  document.getElementById('todayScreen').style.display='none';
+  if(todayCameFrom==='app')document.getElementById('appScreen').style.display='block';
+  else{document.getElementById('loginScreen').style.display='flex';renderLoginScreen();}
+};
+async function renderToday(){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth(),d=now.getDate();
+  const key=dateKey(y,m,d);
+  const dow='日月火水木金土'[now.getDay()];
+  const hols=getHols(y),hol=hols[key];
+  document.getElementById('todayDateLabel').innerHTML=`${y}年${m+1}月${d}日（${dow}）${hol?` ─ ${hol.name}`:''}`;
+  const fyForToday=m>=3?y:y-1;
+  let todayData=allData;
+  if(fyForToday!==fyYear){
+    const raw=await fbGet(dbDataKey(fyForToday));
+    todayData=raw?raw.allData||{}:{};
+  }
+  const active=members.map((name,i)=>({name,i})).filter(p=>p.name&&p.name.trim());
+  const wrap=document.getElementById('todayWrapper');
+  if(!active.length){wrap.innerHTML='<div style="text-align:center;color:#7A8BAA;padding:40px">メンバーが登録されていません</div>';return;}
+  wrap.innerHTML=active.map(({name,i})=>{
+    const entry=(todayData[i]||{})[key]||{};
+    let rows='';
+    for(let s=1;s<=5;s++){
+      const st=entry['start'+s]||'',en=entry['end'+s]||'',ct=entry['content'+s]||'';
+      if(st||en||ct)rows+=`<div class="trow"><span class="ttime">${esc(fmtTime(st))}〜${esc(fmtTime(en))}</span><span class="tcont">${esc(ct)||'—'}</span></div>`;
+    }
+    if(!rows)rows=`<div class="tnone">本日の予定はありません</div>`;
+    const memo=entry.memo?`<div class="tmemo">📝 ${esc(entry.memo)}</div>`:'';
+    return`<div class="today-card"><div class="today-name">${AVATARS[i]} ${esc(name)}</div>${rows}${memo}</div>`;
+  }).join('');
+}
+
+// ═══ 設定パネル ════════════════════════════════════════════
+window.openSettings=function(){
+  const rows=document.getElementById('settingsRows');
+  rows.innerHTML=members.map((name,i)=>
+    `<div class="srow"><label>${AVATARS[i]} ${i+1}.</label>
+    <input type="text" id="sn${i}" value="${esc(name||'')}" placeholder="名前（未入力で非表示）" maxlength="20"></div>`
+  ).join('');
+  document.getElementById('settingsBg').classList.add('show');
+};
+window.closeSettings=function(){document.getElementById('settingsBg').classList.remove('show')};
+window.saveSettings=async function(){
+  members=members.map((_,i)=>document.getElementById('sn'+i).value.trim());
+  // パスワード変更
+  const pw1 = document.getElementById('newPwInp').value;
+  const pw2 = document.getElementById('newPwInp2').value;
+  const pwErr = document.getElementById('pwChangeErr');
+  if (pw1 || pw2) {
+    if (pw1 !== pw2) { pwErr.textContent = '❌ パスワードが一致しません'; return; }
+    if (pw1.length < 4) { pwErr.textContent = '❌ パスワードは4文字以上にしてください'; return; }
+    const hash = await sha256(pw1);
+    await fbSet(DB_PASSWORD, hash);
+    storedPasswordHash = hash;
+    sessionStorage.setItem('cal_pw_ok', '1');
+    showToast('🔒 パスワードを設定しました');
+  } else if (pw1 === '' && pw2 === '') {
+    // 空欄で保存 → パスワード解除
+    const rows = document.getElementById('settingsRows');
+    // pw欄が両方空かつユーザーが意図的にクリアした場合のみ
+  }
+  pwErr.textContent = '';
+  document.getElementById('newPwInp').value = '';
+  document.getElementById('newPwInp2').value = '';
+  const ok=await fbSet(DB_MEMBERS,members);
+  window.closeSettings();
+  renderLoginScreen();
+  if(myIndex>=0)renderPersonTabs();
+  if(ok)showToast('✅ メンバー名を保存しました（全員に即座に反映されます）');
+};
+
+// ═══ トースト ══════════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+window.showToast=showToast;
+
+// ═══ 初期化 ════════════════════════════════════════════════
+  try{
+    await initData();
+    updateYearLabels();
+    document.getElementById('loadingScreen').style.display='none';
+    const needPw = await showPasswordScreenIfNeeded();
+    if (!needPw) {
+      renderLoginScreen();
+      document.getElementById('loginScreen').style.display='flex';
+    }
+  }catch(e){
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('setupScreen').style.display='flex';
+    console.error(e);
+  }
+} // end startApp
+</script>
+</body>
+</html>
