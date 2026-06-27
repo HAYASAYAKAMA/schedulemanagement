@@ -426,7 +426,6 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <input type="password" id="newPwInp2" placeholder="もう一度入力" autocomplete="new-password">
     </div>
     <div id="pwChangeErr" style="font-size:.75rem;color:var(--red);min-height:1.2em;margin-bottom:4px"></div>
-    <button onclick="removePw()" style="width:100%;padding:10px;background:#FEE2E2;color:#B91C1C;border:none;border-radius:8px;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;margin-bottom:10px">🔓 パスワードを解除する</button>
     <div class="sbtns">
       <button class="sbtn sbtn-cancel" onclick="closeSettings()">キャンセル</button>
       <button class="sbtn sbtn-save" onclick="saveSettings()">保存する（全員に反映）</button>
@@ -613,8 +612,12 @@ window.showSyncBar=showSyncBar;
 // ═══ パスワード ════════════════════════════════════════════
 let storedPasswordHash = null;
 
+const PW_SALT = 'cal-app-s4lt-2024!';
+const PW_MAX_ATTEMPTS = 5;
+const PW_LOCKOUT_MS = 15 * 60 * 1000; // 15分
+
 async function sha256(text) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PW_SALT + text));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
@@ -626,17 +629,43 @@ async function loadPassword() {
 window.checkPassword = async function() {
   const inp = document.getElementById('pwInput');
   const err = document.getElementById('pwErr');
+
+  // ロックアウト確認
+  const attempts = parseInt(sessionStorage.getItem('pw_attempts') || '0');
+  const lockUntil = parseInt(sessionStorage.getItem('pw_lock_until') || '0');
+  const now = Date.now();
+  if (lockUntil && now < lockUntil) {
+    const remaining = Math.ceil((lockUntil - now) / 60000);
+    err.textContent = `🔒 試行回数が上限に達しました。${remaining}分後に再試行できます`;
+    inp.value = '';
+    return;
+  }
+  if (lockUntil && now >= lockUntil) {
+    sessionStorage.removeItem('pw_attempts');
+    sessionStorage.removeItem('pw_lock_until');
+  }
+
   const val = inp.value;
   if (!val) { err.textContent = 'パスワードを入力してください'; inp.classList.add('error'); setTimeout(()=>inp.classList.remove('error'),400); return; }
   const hash = await sha256(val);
   if (hash === storedPasswordHash) {
+    sessionStorage.removeItem('pw_attempts');
+    sessionStorage.removeItem('pw_lock_until');
     sessionStorage.setItem('cal_pw_ok', '1');
     document.getElementById('passwordScreen').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
     err.textContent = '';
     inp.value = '';
   } else {
-    err.textContent = '❌ パスワードが違います';
+    const newAttempts = attempts + 1;
+    sessionStorage.setItem('pw_attempts', newAttempts);
+    const remaining = PW_MAX_ATTEMPTS - newAttempts;
+    if (newAttempts >= PW_MAX_ATTEMPTS) {
+      sessionStorage.setItem('pw_lock_until', Date.now() + PW_LOCKOUT_MS);
+      err.textContent = `🔒 試行回数が上限に達しました。15分後に再試行できます`;
+    } else {
+      err.textContent = `❌ パスワードが違います（残り${remaining}回）`;
+    }
     inp.classList.add('error');
     inp.value = '';
     setTimeout(()=>inp.classList.remove('error'), 400);
@@ -952,17 +981,6 @@ window.openSettings=function(){
   document.getElementById('settingsBg').classList.add('show');
 };
 window.closeSettings=function(){document.getElementById('settingsBg').classList.remove('show')};
-window.removePw = async function() {
-  if (!confirm('パスワードを解除しますか？\n解除すると誰でもアクセスできるようになります。')) return;
-  await fbSet(DB_PASSWORD, null);
-  storedPasswordHash = null;
-  sessionStorage.removeItem('cal_pw_ok');
-  document.getElementById('newPwInp').value = '';
-  document.getElementById('newPwInp2').value = '';
-  document.getElementById('pwChangeErr').textContent = '';
-  showToast('🔓 パスワードを解除しました');
-};
-
 window.saveSettings=async function(){
   members=members.map((_,i)=>document.getElementById('sn'+i).value.trim());
   // パスワード変更
