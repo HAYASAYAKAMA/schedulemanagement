@@ -377,6 +377,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <button class="quick-box" onclick="openMap()"><span class="qi">📍</span><span class="ql-label">土庄町地図</span></button>
       <button class="quick-box" onclick="window._openChat&&window._openChat()"><span class="qi">💬</span><span class="ql-label" id="chatLoginLbl">チャット</span></button>
       <button class="quick-box" onclick="openSettings()"><span class="qi">⚙</span><span class="ql-label">設定</span></button>
+      <button class="quick-box" onclick="goToMemberSelect()" style="border:2px solid #D1D9E6"><span class="qi">👤</span><span class="ql-label" style="color:#7A8BAA">メンバー変更</span></button>
     </div>
   </div>
 </div>
@@ -398,7 +399,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <button class="hbtn" onclick="openMap()">📍 地図</button>
       <button class="hbtn" id="chatHbtn" onclick="window._openChat&&window._openChat()">💬 チャット</button>
       <button class="hbtn" onclick="openSettings()">⚙ 設定</button>
-      <button class="hbtn" onclick="logout()">← 戻る</button>
+      <button class="hbtn" onclick="goToCalendarSelect()">← 戻る</button>
     </div>
   </header>
   <div class="sync-bar hidden" id="syncBar"><span class="sdot"></span><span id="syncMsg"></span></div>
@@ -900,10 +901,23 @@ function renderLoginScreen(){
   }).join('');
 }
 window.login=function(idx){
-  myIndex=idx;viewIndex=idx;
+  viewIndex=idx;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
   startListeners();render();
+};
+// カレンダーから「戻る」→ カレンダー選択画面へ
+window.goToCalendarSelect=function(){
+  stopListeners();viewIndex=-1;
+  document.getElementById('appScreen').style.display='none';
+  renderLoginScreen();
+  document.getElementById('loginScreen').style.display='flex';
+};
+// カレンダー選択画面から「メンバー変更」→ メンバー選択画面へ
+window.goToMemberSelect=function(){
+  myIndex=-1;viewIndex=-1;
+  document.getElementById('loginScreen').style.display='none';
+  showMemberSelectScreen();
 };
 window.logout=function(){
   stopListeners();myIndex=-1;viewIndex=-1;
