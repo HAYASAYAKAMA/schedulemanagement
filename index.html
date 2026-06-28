@@ -243,60 +243,57 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .pin-btn-del{padding:12px 14px;background:#FEE2E2;color:var(--red);border:none;border-radius:9px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer}
 .pin-btn-cancel{padding:12px 14px;background:var(--bg);color:var(--muted);border:none;border-radius:9px;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer}
 
-footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
-
 /* ── チャット ── */
 #chatScreen{display:none}
 .chat-layout{display:flex;height:calc(100vh - 54px);overflow:hidden}
-.chat-rooms{width:220px;flex-shrink:0;border-right:1px solid var(--border);background:#fff;display:flex;flex-direction:column}
-.chat-rooms-head{padding:12px 14px;font-size:.8rem;font-weight:700;color:var(--navy);border-bottom:1px solid var(--border);background:var(--bg)}
+.chat-sidebar{width:210px;flex-shrink:0;border-right:1px solid var(--border);background:#fff;display:flex;flex-direction:column}
+.chat-sidebar-head{padding:11px 14px;font-size:.8rem;font-weight:700;color:var(--navy);border-bottom:1px solid var(--border);background:var(--bg)}
 .room-list{flex:1;overflow-y:auto;padding:6px}
-.room-item{padding:9px 11px;border-radius:8px;cursor:pointer;font-size:.82rem;color:var(--navy);font-weight:500;display:flex;align-items:center;gap:7px;transition:background .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-item{padding:9px 11px;border-radius:8px;cursor:pointer;font-size:.82rem;color:var(--navy);font-weight:500;display:flex;align-items:center;gap:7px;transition:background .12s}
 .room-item:hover{background:var(--sky)}
 .room-item.active{background:var(--blue);color:#fff}
-.room-item .room-unread{margin-left:auto;background:#E03E3E;color:#fff;font-size:.6rem;font-weight:700;border-radius:99px;padding:1px 6px;flex-shrink:0}
-.chat-room-entry{padding:10px;border-top:1px solid var(--border)}
-.chat-room-entry input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.8rem;color:var(--navy);outline:none}
-.chat-room-entry input:focus{border-color:var(--blue)}
-.chat-room-add{width:100%;margin-top:6px;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer}
-.chat-room-add:hover{background:#1a56cb}
-.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
-.chat-head{padding:10px 16px;border-bottom:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:10px}
+.room-unread{margin-left:auto;background:#E03E3E;color:#fff;font-size:.6rem;font-weight:700;border-radius:99px;padding:1px 6px;flex-shrink:0}
+.room-add-area{padding:10px;border-top:1px solid var(--border)}
+.room-add-inp{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.8rem;color:var(--navy);outline:none;margin-bottom:6px}
+.room-add-inp:focus{border-color:var(--blue)}
+.room-add-btn{width:100%;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer}
+.room-add-btn:hover{background:#1a56cb}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.chat-no-room{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--muted);font-size:.88rem}
+.chat-head{padding:10px 16px;border-bottom:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:10px;flex-shrink:0}
 .chat-head-name{font-size:.92rem;font-weight:700;color:var(--navy)}
-.chat-head-meta{font-size:.7rem;color:var(--muted)}
-.chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.chat-head-meta{font-size:.68rem;color:var(--muted)}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .chat-empty{text-align:center;color:var(--muted);font-size:.82rem;margin:auto;padding:30px 0}
-.chat-msg{display:flex;gap:8px;max-width:78%;animation:msgIn .18s ease}
-@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.chat-msg.me{align-self:flex-end;flex-direction:row-reverse}
-.chat-msg .av{width:30px;height:30px;border-radius:50%;background:var(--sky);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;margin-top:2px}
-.chat-bubble{background:#fff;border:1px solid var(--border);border-radius:12px 12px 12px 3px;padding:8px 12px;max-width:100%;box-shadow:0 1px 4px rgba(27,42,74,.07)}
-.chat-msg.me .chat-bubble{background:var(--blue);color:#fff;border-color:var(--blue);border-radius:12px 12px 3px 12px;box-shadow:0 1px 6px rgba(45,107,228,.3)}
+.chat-date-sep{text-align:center;font-size:.66rem;color:var(--muted);margin:4px 0;display:flex;align-items:center;gap:8px}
+.chat-date-sep::before,.chat-date-sep::after{content:'';flex:1;height:1px;background:var(--border)}
+.chat-row{display:flex;gap:8px;max-width:76%;animation:msgIn .15s ease}
+.chat-row.me{align-self:flex-end;flex-direction:row-reverse}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.chat-av{width:30px;height:30px;border-radius:50%;background:var(--sky);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;margin-top:2px}
+.chat-bubble{background:#fff;border:1px solid var(--border);border-radius:3px 12px 12px 12px;padding:8px 12px;box-shadow:0 1px 3px rgba(27,42,74,.07);max-width:100%}
+.chat-row.me .chat-bubble{background:var(--blue);color:#fff;border-color:transparent;border-radius:12px 3px 12px 12px}
 .chat-bubble-name{font-size:.65rem;font-weight:700;color:var(--blue);margin-bottom:2px}
-.chat-msg.me .chat-bubble-name{color:rgba(255,255,255,.8)}
+.chat-row.me .chat-bubble-name{color:rgba(255,255,255,.8)}
 .chat-bubble-text{font-size:.84rem;line-height:1.55;word-break:break-word;white-space:pre-wrap}
 .chat-bubble-time{font-size:.62rem;color:var(--muted);margin-top:3px;text-align:right}
-.chat-msg.me .chat-bubble-time{color:rgba(255,255,255,.7)}
-.chat-input-area{padding:10px 14px;border-top:1px solid var(--border);background:#fff;display:flex;gap:8px;align-items:flex-end}
-.chat-input-area textarea{flex:1;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:.88rem;color:var(--navy);outline:none;resize:none;max-height:120px;overflow-y:auto;transition:border .15s;min-height:40px}
-.chat-input-area textarea:focus{border-color:var(--blue)}
-.chat-send-btn{width:42px;height:42px;background:var(--blue);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
-.chat-send-btn:hover{background:#1a56cb}
-.chat-no-room{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--muted);font-size:.88rem}
-.chat-date-sep{text-align:center;font-size:.66rem;color:var(--muted);position:relative;margin:4px 0}
-.chat-date-sep::before,.chat-date-sep::after{content:'';position:absolute;top:50%;width:30%;height:1px;background:var(--border)}
-.chat-date-sep::before{left:0}.chat-date-sep::after{right:0}
+.chat-row.me .chat-bubble-time{color:rgba(255,255,255,.7)}
+.chat-input-row{padding:10px 14px;border-top:1px solid var(--border);background:#fff;display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.chat-input-row textarea{flex:1;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:.88rem;color:var(--navy);outline:none;resize:none;max-height:120px;overflow-y:auto;transition:border .15s;min-height:40px}
+.chat-input-row textarea:focus{border-color:var(--blue)}
+.chat-send{width:42px;height:42px;background:var(--blue);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-send:hover{background:#1a56cb}
 @media(max-width:700px){
-  .chat-rooms{width:64px}
-  .chat-rooms-head{font-size:.65rem;padding:8px 6px;text-align:center}
-  .room-item{padding:8px 6px;font-size:.7rem;flex-direction:column;gap:2px;text-align:center;justify-content:center}
-  .room-item .room-icon{font-size:1.2rem}
-  .chat-room-entry input{font-size:.72rem;padding:6px 7px}
-  .chat-room-add{font-size:.72rem;padding:6px}
-  .chat-head{padding:8px 10px}
-  .chat-messages{padding:10px 8px}
-  .chat-msg{max-width:88%}
+  .chat-sidebar{width:60px}
+  .chat-sidebar-head{font-size:.6rem;padding:8px 4px;text-align:center}
+  .room-item{flex-direction:column;padding:7px 4px;font-size:.7rem;text-align:center;gap:1px}
+  .room-add-area{padding:6px 4px}
+  .room-add-inp{font-size:.72rem;padding:6px 6px}
+  .room-add-btn{font-size:.68rem;padding:6px 2px}
+  .chat-row{max-width:90%}
 }
+
+footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 
 /* ── スマホ専用 ── */
 @media(max-width:700px){
@@ -380,7 +377,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
     <div class="quick-col">
       <button class="quick-box" onclick="openToday()"><span class="qi">📋</span><span class="ql-label">本日の予定</span></button>
       <button class="quick-box" onclick="openMap()"><span class="qi">📍</span><span class="ql-label">土庄町地図</span></button>
-      <button class="quick-box" id="chatLoginBtn" onclick="openChat()"><span class="qi">💬</span><span class="ql-label">チャット</span></button>
+      <button class="quick-box" onclick="window._openChat&&window._openChat()"><span class="qi">💬</span><span class="ql-label" id="chatLoginLbl">チャット</span></button>
       <button class="quick-box" onclick="openSettings()"><span class="qi">⚙</span><span class="ql-label">設定</span></button>
     </div>
   </div>
@@ -401,7 +398,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       </div>
       <button class="hbtn" onclick="openToday()">📋 本日</button>
       <button class="hbtn" onclick="openMap()">📍 地図</button>
-      <button class="hbtn" id="chatHeaderBtn" onclick="openChat()">💬 チャット</button>
+      <button class="hbtn" id="chatHbtn" onclick="window._openChat&&window._openChat()">💬 チャット</button>
       <button class="hbtn" onclick="openSettings()">⚙ 設定</button>
       <button class="hbtn" onclick="logout()">← 戻る</button>
     </div>
@@ -453,29 +450,26 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 </div>
 
 <!-- チャット -->
-<div id="chatScreen">
+<div id="chatScreen" style="display:none">
   <header>
     <div class="h-left">
       <h1>💬 メンバーチャット</h1>
-      <p id="chatScreenSub">ルームを選んで話しかけよう</p>
+      <p>ルームを選んでメッセージを送ろう</p>
     </div>
-    <button class="hbtn" onclick="closeChat()">← 戻る</button>
+    <button class="hbtn" onclick="window._closeChat&&window._closeChat()">← 戻る</button>
   </header>
   <div class="chat-layout">
-    <div class="chat-rooms">
-      <div class="chat-rooms-head">💬 ルーム</div>
-      <div class="room-list" id="roomList"></div>
-      <div class="chat-room-entry">
-        <input type="text" id="newRoomInput" placeholder="新しいルーム名" maxlength="20"
-          onkeydown="if(event.key==='Enter')addChatRoom()">
-        <button class="chat-room-add" onclick="addChatRoom()">＋ 作成</button>
+    <div class="chat-sidebar">
+      <div class="chat-sidebar-head">💬 ルーム一覧</div>
+      <div id="roomList" class="room-list"></div>
+      <div class="room-add-area">
+        <input type="text" id="newRoomInp" class="room-add-inp" placeholder="新しいルーム名" maxlength="20"
+          onkeydown="if(event.key==='Enter')window._addRoom&&window._addRoom()">
+        <button class="room-add-btn" onclick="window._addRoom&&window._addRoom()">＋ 作成</button>
       </div>
     </div>
-    <div class="chat-main" id="chatMain">
-      <div class="chat-no-room">
-        <div style="font-size:2.5rem">💬</div>
-        <div>ルームを選択してください</div>
-      </div>
+    <div id="chatMain" class="chat-main">
+      <div class="chat-no-room"><div style="font-size:2.5rem">💬</div><div>ルームを選んでください</div></div>
     </div>
   </div>
 </div>
@@ -654,13 +648,6 @@ let allData={};
 let holidayCache={};
 let todayCameFrom='login';
 let unsubscribeData=null, unsubscribeMembers=null;
-// チャット用状態
-let chatRooms={};
-let currentRoomId=null;
-let chatMessages={};
-let unsubscribeRooms=null, unsubscribeChatMsg=null;
-let chatCameFrom='login';
-let chatUnreadCounts={};
 
 // ═══ ユーティリティ ════════════════════════════════════════
 function dateKey(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
@@ -675,8 +662,6 @@ function defaultFYIndex(){const now=new Date();const idx=FY_MONTHS.findIndex(e=>
 // ═══ Firebase DB操作 ═══════════════════════════════════════
 const DB_MEMBERS = 'members';
 const DB_PASSWORD = 'app_password';
-const DB_CHAT = 'chat';
-const CHAT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 1週間
 function dbDataKey(yr){return`data_${yr}`}
 
 async function fbGet(path){
@@ -1124,13 +1109,6 @@ function showToast(msg){
 }
 window.showToast=showToast;
 
-function hideAllScreens(){
-  ['loginScreen','appScreen','todayScreen','mapScreen','chatScreen'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el)el.style.display='none';
-  });
-}
-
 // ═══ マップ（地図ピン） ════════════════════════════════════
 const TONOSHO_CENTER=[34.4936,134.1839]; // 香川県小豆郡土庄町
 const DB_PINS='map_pins';
@@ -1272,130 +1250,140 @@ window.deletePin=async function(){
   showToast('🗑 ピンを削除しました');
 };
 
-// ═══ チャット ════════════════════════════════════════════════
-function myName(){return myIndex>=0?(members[myIndex]||`メンバー${myIndex+1}`):'ゲスト'}
-function myAvatar(){return myIndex>=0?AVATARS[myIndex]:'🧑'}
+// ═══ チャット機能 ════════════════════════════════════════════
+const DB_CHAT='chat';
+const CHAT_TTL=7*24*60*60*1000;
+let chatRooms={},currentRoomId=null,chatMsgs={};
+let unsubRooms=null,unsubMsgs=null,chatFrom='login';
 
-window.openChat = function(from){
-  chatCameFrom = document.getElementById('appScreen').style.display==='block'?'app':'login';
-  hideAllScreens();
+function chatMyName(){return myIndex>=0?(members[myIndex]||`メンバー${myIndex+1}`):'ゲスト'}
+function chatMyAv(){return myIndex>=0?AVATARS[myIndex]:'🧑'}
+
+function hideAll(){
+  ['loginScreen','appScreen','todayScreen','mapScreen','chatScreen'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+}
+
+window._openChat=function(){
+  chatFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
+  hideAll();
   document.getElementById('chatScreen').style.display='block';
-  startChatRoomsListener();
-  updateChatBadges();
-};
-window.closeChat = function(){
-  if(unsubscribeChatMsg){unsubscribeChatMsg();unsubscribeChatMsg=null;}
-  if(chatCameFrom==='app'){
-    document.getElementById('chatScreen').style.display='none';
-    document.getElementById('appScreen').style.display='block';
-  }else{
-    document.getElementById('chatScreen').style.display='none';
-    document.getElementById('loginScreen').style.display='flex';
+  if(!unsubRooms){
+    unsubRooms=fbListen(DB_CHAT+'/rooms',val=>{
+      chatRooms=val||{};
+      renderRoomList();
+    });
   }
 };
 
-function startChatRoomsListener(){
-  if(unsubscribeRooms)return;
-  unsubscribeRooms = fbListen(DB_CHAT+'/rooms',(val)=>{
-    chatRooms = val||{};
-    renderRoomList();
-    updateChatBadges();
-  });
-}
+window._closeChat=function(){
+  document.getElementById('chatScreen').style.display='none';
+  if(chatFrom==='app'){document.getElementById('appScreen').style.display='block';}
+  else{document.getElementById('loginScreen').style.display='flex';renderLoginScreen();}
+};
+
+window._addRoom=async function(){
+  const inp=document.getElementById('newRoomInp');
+  const name=(inp?.value||'').trim();
+  if(!name){showToast('⚠️ ルーム名を入力してください');return;}
+  const icons=['💬','🌟','📢','🎉','🏖️','📚','🎮','☕','🔥','💡'];
+  const icon=icons[Math.floor(Math.random()*icons.length)];
+  const id='r'+Date.now()+Math.random().toString(36).slice(2,5);
+  const ok=await fbSet(DB_CHAT+'/rooms/'+id,{name,icon,createdAt:Date.now(),updatedAt:Date.now(),by:chatMyName()});
+  if(ok){inp.value='';showToast('✅ ルーム「'+name+'」を作成しました');chatSelectRoom(id);}
+};
 
 function renderRoomList(){
   const el=document.getElementById('roomList');
   if(!el)return;
-  const entries=Object.entries(chatRooms).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
+  const lastRead=JSON.parse(localStorage.getItem('chat_lr')||'{}');
+  const entries=Object.entries(chatRooms).filter(([,r])=>r).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
   if(!entries.length){
-    el.innerHTML='<div style="font-size:.75rem;color:var(--muted);padding:10px 8px;text-align:center">ルームがありません</div>';
+    el.innerHTML='<div style="padding:12px 8px;font-size:.75rem;color:var(--muted);text-align:center">ルームなし</div>';
     return;
   }
-  el.innerHTML=entries.map(([id,room])=>{
-    const unread=chatUnreadCounts[id]||0;
-    const isActive=id===currentRoomId;
-    return`<div class="room-item${isActive?' active':''}" onclick="selectRoom('${id}')">
-      <span class="room-icon">${esc(room.icon||'💬')}</span>
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(room.name||id)}</span>
-      ${unread>0&&!isActive?`<span class="room-unread">${unread}</span>`:''}
+  el.innerHTML=entries.map(([id,r])=>{
+    const msgs=chatMsgs[id]||{};
+    const lr=lastRead[id]||0;
+    const unread=Object.values(msgs).filter(m=>m&&m.ts>lr&&m.si!==myIndex).length;
+    const active=id===currentRoomId;
+    return`<div class="room-item${active?' active':''}" onclick="chatSelectRoom('${esc(id)}')">
+      <span>${r.icon||'💬'}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</span>
+      ${unread&&!active?`<span class="room-unread">${unread}</span>`:''}
     </div>`;
   }).join('');
 }
 
-window.selectRoom = function(id){
-  currentRoomId = id;
-  chatUnreadCounts[id]=0;
+window.chatSelectRoom=function(id){
+  currentRoomId=id;
+  // 既読更新
+  const lr=JSON.parse(localStorage.getItem('chat_lr')||'{}');
+  lr[id]=Date.now();localStorage.setItem('chat_lr',JSON.stringify(lr));
   renderRoomList();
-  if(unsubscribeChatMsg){unsubscribeChatMsg();unsubscribeChatMsg=null;}
-  renderChatMain();
-  // メッセージリスナー開始
-  unsubscribeChatMsg = fbListen(DB_CHAT+'/messages/'+id, (val)=>{
-    chatMessages[id]=val||{};
-    // 1週間以上前のメッセージを削除
-    purgeChatExpired(id);
-    renderChatMessages(id);
-  });
-};
-
-function renderChatMain(){
-  const room=chatRooms[currentRoomId];
+  if(unsubMsgs){unsubMsgs();unsubMsgs=null;}
+  // チャットメインUI描画
+  const room=chatRooms[id]||{};
   const main=document.getElementById('chatMain');
   if(!main)return;
   main.innerHTML=`
     <div class="chat-head">
-      <span style="font-size:1.3rem">${esc(room?.icon||'💬')}</span>
-      <div>
-        <div class="chat-head-name">${esc(room?.name||currentRoomId)}</div>
-        <div class="chat-head-meta">1週間以上前のメッセージは自動削除</div>
-      </div>
+      <span style="font-size:1.3rem">${room.icon||'💬'}</span>
+      <div><div class="chat-head-name">${esc(room.name||id)}</div>
+      <div class="chat-head-meta">1週間以上前のメッセージは自動削除されます</div></div>
     </div>
-    <div class="chat-messages" id="chatMsgArea"><div class="chat-empty">メッセージがありません</div></div>
-    <div class="chat-input-area">
-      <textarea id="chatInput" rows="1" placeholder="メッセージを入力… (Shift+Enterで改行)"
-        oninput="autoResizeChatInput(this)"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg()}"></textarea>
-      <button class="chat-send-btn" onclick="sendChatMsg()">➤</button>
+    <div class="chat-msgs" id="chatMsgArea"><div class="chat-empty">メッセージがありません</div></div>
+    <div class="chat-input-row">
+      <textarea id="chatTxt" rows="1" placeholder="メッセージを入力… (Shift+Enterで改行)"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}"></textarea>
+      <button class="chat-send" onclick="chatSend()">➤</button>
     </div>`;
-}
-
-window.autoResizeChatInput = function(el){
-  el.style.height='auto';
-  el.style.height=Math.min(el.scrollHeight,120)+'px';
+  // メッセージリスナー
+  unsubMsgs=fbListen(DB_CHAT+'/msgs/'+id,val=>{
+    chatMsgs[id]=val||{};
+    chatPurge(id);
+    chatRenderMsgs(id);
+    // 既読更新
+    const lr2=JSON.parse(localStorage.getItem('chat_lr')||'{}');
+    lr2[id]=Date.now();localStorage.setItem('chat_lr',JSON.stringify(lr2));
+    renderRoomList();
+  });
 };
 
-function renderChatMessages(roomId){
+window.chatSend=async function(){
+  const txt=document.getElementById('chatTxt');
+  if(!txt||!currentRoomId)return;
+  const text=txt.value.trim();
+  if(!text)return;
+  if(myIndex<0){showToast('⚠️ 先に名前を選んでください');return;}
+  txt.value='';txt.style.height='auto';
+  const mid='m'+Date.now()+Math.random().toString(36).slice(2,6);
+  await fbSet(DB_CHAT+'/msgs/'+currentRoomId+'/'+mid,{text,si:myIndex,name:chatMyName(),ts:Date.now()});
+  await fbSet(DB_CHAT+'/rooms/'+currentRoomId+'/updatedAt',Date.now());
+};
+
+function chatRenderMsgs(id){
   const area=document.getElementById('chatMsgArea');
-  if(!area||roomId!==currentRoomId)return;
-  const msgs=chatMessages[roomId]||{};
-  const list=Object.entries(msgs)
-    .filter(([,m])=>m&&m.ts)
-    .sort((a,b)=>a[1].ts-b[1].ts);
+  if(!area||id!==currentRoomId)return;
+  const msgs=chatMsgs[id]||{};
+  const list=Object.values(msgs).filter(m=>m&&m.ts).sort((a,b)=>a.ts-b.ts);
   if(!list.length){area.innerHTML='<div class="chat-empty">メッセージがありません</div>';return;}
-  let html='';
-  let lastDateStr='';
-  const now=Date.now();
-  list.forEach(([,m])=>{
+  let html='',lastDate='';
+  list.forEach(m=>{
     const d=new Date(m.ts);
-    const dateStr=d.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
-    if(dateStr!==lastDateStr){
-      html+=`<div class="chat-date-sep">${esc(dateStr)}</div>`;
-      lastDateStr=dateStr;
-    }
-    const timeStr=d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
-    const isMe=m.senderIndex===myIndex&&myIndex>=0;
-    const avatar=AVATARS[m.senderIndex]||'🧑';
-    const name=esc(m.senderName||'不明');
-    const age=now-m.ts;
-    const ageStr=age<60000?'今'
-      :age<3600000?Math.floor(age/60000)+'分前'
-      :age<86400000?Math.floor(age/3600000)+'時間前'
-      :dateStr;
-    html+=`<div class="chat-msg${isMe?' me':''}">
-      <div class="av">${avatar}</div>
+    const ds=d.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+    if(ds!==lastDate){html+=`<div class="chat-date-sep">${esc(ds)}</div>`;lastDate=ds;}
+    const ts=d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+    const isMe=m.si===myIndex&&myIndex>=0;
+    const av=AVATARS[m.si>=0?m.si:0]||'🧑';
+    html+=`<div class="chat-row${isMe?' me':''}">
+      <div class="chat-av">${av}</div>
       <div class="chat-bubble">
-        ${!isMe?`<div class="chat-bubble-name">${name}</div>`:''}
+        ${!isMe?`<div class="chat-bubble-name">${esc(m.name||'不明')}</div>`:''}
         <div class="chat-bubble-text">${esc(m.text)}</div>
-        <div class="chat-bubble-time">${timeStr}</div>
+        <div class="chat-bubble-time">${ts}</div>
       </div>
     </div>`;
   });
@@ -1403,73 +1391,13 @@ function renderChatMessages(roomId){
   area.scrollTop=area.scrollHeight;
 }
 
-window.sendChatMsg = async function(){
-  const inp=document.getElementById('chatInput');
-  if(!inp||!currentRoomId)return;
-  const text=inp.value.trim();
-  if(!text)return;
-  if(myIndex<0){showToast('⚠️ 名前を選んでからチャットしてください');return;}
-  inp.value='';inp.style.height='auto';
-  const msgId='m'+Date.now()+Math.random().toString(36).slice(2,6);
-  const msgData={text,senderIndex:myIndex,senderName:myName(),ts:Date.now()};
-  const ok=await fbSet(DB_CHAT+'/messages/'+currentRoomId+'/'+msgId, msgData);
-  if(ok){
-    // ルームのupdatedAtを更新
-    await fbSet(DB_CHAT+'/rooms/'+currentRoomId+'/updatedAt', Date.now());
-  }
-};
-
-async function purgeChatExpired(roomId){
-  const msgs=chatMessages[roomId]||{};
-  const cutoff=Date.now()-CHAT_TTL_MS;
-  const expired=Object.entries(msgs).filter(([,m])=>m&&m.ts<cutoff);
-  for(const [id] of expired){
-    await fbSet(DB_CHAT+'/messages/'+roomId+'/'+id, null);
+async function chatPurge(id){
+  const msgs=chatMsgs[id]||{};
+  const cut=Date.now()-CHAT_TTL;
+  for(const [k,m] of Object.entries(msgs)){
+    if(m&&m.ts<cut)await fbSet(DB_CHAT+'/msgs/'+id+'/'+k,null);
   }
 }
-
-window.addChatRoom = async function(){
-  const inp=document.getElementById('newRoomInput');
-  if(!inp)return;
-  const name=inp.value.trim();
-  if(!name){showToast('⚠️ ルーム名を入力してください');return;}
-  const icons=['💬','🌟','📢','🎉','🏖️','📚','🎮','☕'];
-  const icon=icons[Math.floor(Math.random()*icons.length)];
-  const id='r'+Date.now()+Math.random().toString(36).slice(2,5);
-  const ok=await fbSet(DB_CHAT+'/rooms/'+id,{name,icon,createdAt:Date.now(),updatedAt:Date.now(),createdBy:myName()});
-  if(ok){inp.value='';showToast('✅ ルーム「'+name+'」を作成しました');selectRoom(id);}
-};
-
-function updateChatBadges(){
-  // 未読のバッジを計算（簡易：既読管理はlocalStorageで）
-  const lastRead=JSON.parse(localStorage.getItem('chat_last_read')||'{}');
-  chatUnreadCounts={};
-  let total=0;
-  Object.entries(chatRooms).forEach(([rid])=>{
-    const msgs=chatMessages[rid]||{};
-    const lr=lastRead[rid]||0;
-    const unread=Object.values(msgs).filter(m=>m&&m.ts>lr&&m.senderIndex!==myIndex).length;
-    chatUnreadCounts[rid]=unread;
-    total+=unread;
-  });
-  // ヘッダーとログインのチャットボタンにバッジ
-  const hbtn=document.getElementById('chatHeaderBtn');
-  const lbtn=document.getElementById('chatLoginBtn');
-  const badge=total>0?` (${total})`:'';
-  if(hbtn)hbtn.textContent='💬 チャット'+badge;
-  if(lbtn){const ql=lbtn.querySelector('.ql-label');if(ql)ql.textContent='チャット'+badge;}
-}
-
-// ルーム選択時に既読を記録
-const _origSelectRoom=window.selectRoom;
-window.selectRoom=function(id){
-  // 既読更新
-  const lastRead=JSON.parse(localStorage.getItem('chat_last_read')||'{}');
-  lastRead[id]=Date.now();
-  localStorage.setItem('chat_last_read',JSON.stringify(lastRead));
-  _origSelectRoom(id);
-};
-
 // ─── 初期化 ───────────────────────────────────────────────
   try{
     await initData();
