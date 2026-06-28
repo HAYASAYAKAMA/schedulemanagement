@@ -93,6 +93,25 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 /* ── アプリ ── */
 #appScreen{display:none}
+
+/* ── 動物サイドバー ── */
+.app-body{display:flex;align-items:flex-start}
+.animal-sidebar{width:64px;flex-shrink:0;background:#fff;border-right:1px solid var(--border);position:sticky;top:0;height:calc(100vh - 54px);overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:6px;z-index:100;scrollbar-width:none}
+.animal-sidebar::-webkit-scrollbar{display:none}
+.sidebar-animal-btn{background:none;border:none;cursor:pointer;padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;width:56px;border-radius:8px;transition:background .15s}
+.sidebar-animal-btn:hover{background:var(--sky)}
+.sidebar-animal-btn.active{background:#E8F0FE;outline:2px solid var(--blue)}
+.sidebar-animal-btn.me-mark{outline:2px solid var(--green)}
+.sidebar-animal-btn .sab-img{width:36px;height:36px;border-radius:50%;object-fit:cover;display:block}
+.sidebar-animal-btn .sab-name{font-size:.52rem;color:var(--navy);font-weight:600;text-align:center;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
+.sidebar-animal-btn .sab-desc{font-size:.46rem;color:var(--muted);text-align:center;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-animal-btn .sab-me{font-size:.44rem;background:var(--green);color:#fff;border-radius:3px;padding:1px 3px;font-weight:700;margin-top:1px}
+.cal-main{flex:1;min-width:0}
+
+/* ── アニマルプロフィールモーダル（編集ボタン追加） ── */
+.animal-modal-edit-btn{display:block;width:100%;margin-top:14px;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer}
+.animal-modal-edit-btn:hover{background:#1a56cb}
+
 header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(27,42,74,.3)}
 .h-left h1{font-size:.98rem;font-weight:700;color:#fff}
 .h-left p{font-size:.68rem;color:#9AB0D0;margin-top:1px}
@@ -434,20 +453,27 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
     </div>
   </header>
   <div class="sync-bar hidden" id="syncBar"><span class="sdot"></span><span id="syncMsg"></span></div>
-  <div class="person-nav" id="personNav"></div>
-  <div id="roBanner" class="ro-banner" style="display:none">👁 閲覧モード — この予定は編集できません</div>
-  <nav class="month-nav" id="monthNav"></nav>
-  <main class="cal-wrap">
-    <div class="month-title" id="monthTitle"></div>
-    <div class="legend">
-      <div class="li"><div class="ld" style="background:#2563EB"></div>土曜</div>
-      <div class="li"><div class="ld" style="background:#DC2626"></div>日曜</div>
-      <div class="li"><div class="ld" style="background:#E03E3E"></div>祝日</div>
-      <div class="li"><div class="ld" style="background:#F59E0B"></div>振替休日</div>
+  <div class="app-body">
+    <!-- 左サイドバー：動物アイコン縦並び -->
+    <div class="animal-sidebar" id="animalSidebar"></div>
+    <!-- メインエリア -->
+    <div class="cal-main">
+      <div class="person-nav" id="personNav"></div>
+      <div id="roBanner" class="ro-banner" style="display:none">👁 閲覧モード — この予定は編集できません</div>
+      <nav class="month-nav" id="monthNav"></nav>
+      <main class="cal-wrap">
+        <div class="month-title" id="monthTitle"></div>
+        <div class="legend">
+          <div class="li"><div class="ld" style="background:#2563EB"></div>土曜</div>
+          <div class="li"><div class="ld" style="background:#DC2626"></div>日曜</div>
+          <div class="li"><div class="ld" style="background:#E03E3E"></div>祝日</div>
+          <div class="li"><div class="ld" style="background:#F59E0B"></div>振替休日</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </main>
+      <footer>データはFirebaseにリアルタイム保存・共有されます　|　祝日は内閣府告示に基づく計算値</footer>
     </div>
-    <div class="cal-grid" id="calGrid"></div>
-  </main>
-  <footer>データはFirebaseにリアルタイム保存・共有されます　|　祝日は内閣府告示に基づく計算値</footer>
+  </div>
 </div>
 
 <!-- 本日の予定 -->
@@ -557,6 +583,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
     <div class="animal-modal-name" id="animalModalAnimalName"></div>
     <div class="animal-modal-member" id="animalModalMemberName"></div>
     <div class="animal-modal-desc" id="animalModalDesc"></div>
+    <button class="animal-modal-edit-btn" id="animalModalEditBtn" onclick="openSettingsForAnimal()" style="display:none">✏️ 説明文を編集する（設定画面へ）</button>
   </div>
 </div>
 
@@ -1004,7 +1031,28 @@ window.logout=function(){
 };
 
 // ═══ レンダー ══════════════════════════════════════════════
-function render(){updateYearLabels();renderPersonTabs();renderMonthTabs();renderCalendar()}
+function render(){updateYearLabels();renderPersonTabs();renderMonthTabs();renderCalendar();renderAnimalSidebar()}
+
+function renderAnimalSidebar(){
+  const sb=document.getElementById('animalSidebar');
+  if(!sb)return;
+  const active=members.map((name,i)=>({name,i})).filter(p=>p.name&&p.name.trim());
+  if(!active.length){sb.innerHTML='';return;}
+  sb.innerHTML=active.map(({name,i})=>{
+    const av=AVATAR_IMGS[i]||AVATAR_IMGS[0];
+    const desc=descriptions[i]||'';
+    const isMe=i===myIndex;
+    const isView=i===viewIndex;
+    const meCls=isMe?'me-mark':'';
+    const activeCls=isView?'active':'';
+    return`<button class="sidebar-animal-btn ${activeCls} ${meCls}" onclick="switchPerson(${i})" title="${esc(name)}${desc?'\n'+desc:''}">
+      <img class="sab-img" src="${av.src}" alt="${av.name}" onclick="event.stopPropagation();openAnimalModal(${i})">
+      <span class="sab-name">${esc(name)}</span>
+      ${desc?`<span class="sab-desc">${esc(desc)}</span>`:''}
+      ${isMe?'<span class="sab-me">自分</span>':''}
+    </button>`;
+  }).join('');
+}
 
 function renderPersonTabs(){
   const nav=document.getElementById('personNav');
@@ -1086,7 +1134,10 @@ window.upd=function(key,field,value,slotId){
   debounceSave();
 };
 window.fmtTI=fmtTI;
-window.switchPerson=function(idx){viewIndex=idx;renderPersonTabs();renderCalendar()};
+window.switchPerson=function(idx){viewIndex=idx;renderPersonTabs();renderCalendar();renderAnimalSidebar()};
+window.closeAnimalModal=function(){
+  document.getElementById('animalModalBg').classList.remove('show');
+};
 window.switchFY=function(i){currentFYIndex=i;renderMonthTabs();renderCalendar();debounceSave()};
 
 // ═══ スマホ用モーダル ══════════════════════════════════════
@@ -1231,7 +1282,9 @@ window.saveSettings=async function(){
 };
 
 // ═══ アニマルプロフィールモーダル ═══════════════════════════
+let _currentAnimalIdx=-1;
 window.openAnimalModal=function(i){
+  _currentAnimalIdx=i;
   const av=AVATAR_IMGS[i]||AVATAR_IMGS[0];
   const memberName=members[i]||'（未設定）';
   const desc=descriptions[i]||'';
@@ -1247,10 +1300,21 @@ window.openAnimalModal=function(i){
     descEl.textContent='説明文はまだ設定されていません。設定画面から追加できます。';
     descEl.classList.add('empty');
   }
+  // 自分のアイコンのとき「編集」ボタンを表示
+  const editBtn=document.getElementById('animalModalEditBtn');
+  if(editBtn){
+    editBtn.style.display=(i===myIndex)?'block':'none';
+  }
   document.getElementById('animalModalBg').classList.add('show');
 };
-window.closeAnimalModal=function(){
-  document.getElementById('animalModalBg').classList.remove('show');
+window.openSettingsForAnimal=function(){
+  closeAnimalModal();
+  // 設定画面を開いて該当メンバーの説明欄にフォーカス
+  openSettings();
+  setTimeout(()=>{
+    const el=document.getElementById('sd'+_currentAnimalIdx);
+    if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}
+  },200);
 };
 
 // ═══ トースト ══════════════════════════════════════════════
