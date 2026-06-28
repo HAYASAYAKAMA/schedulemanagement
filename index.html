@@ -49,6 +49,18 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .pw-err{font-size:.8rem;color:var(--red);margin-top:8px;min-height:1.2em;font-weight:500}
 .pw-hint{font-size:.72rem;color:var(--muted);margin-top:16px;padding:10px 14px;background:var(--bg);border-radius:8px;line-height:1.7}
 
+/* ── メンバー選択（パスワード後） ── */
+#memberSelectScreen{display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)}
+.ms-box{background:#fff;border-radius:20px;padding:38px 30px;width:420px;max-width:95vw;box-shadow:0 24px 80px rgba(27,42,74,.35)}
+.ms-box h1{font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:4px}
+.ms-box>p{font-size:.8rem;color:var(--muted);margin-bottom:18px;line-height:1.6}
+.ms-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.ms-btn{padding:13px 8px;border-radius:10px;border:2px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:.88rem;font-weight:500;color:var(--navy);transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.ms-btn:hover{border-color:var(--blue);background:var(--sky);color:var(--blue)}
+.ms-btn .av{font-size:1.5rem}
+.ms-btn .nm{font-size:.82rem;font-weight:700}
+.ms-btn .sb{font-size:.68rem;color:var(--muted)}
+
 /* ── ログイン ── */
 #loginScreen{display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)}
 .login-box{background:#fff;border-radius:20px;padding:38px 30px;width:420px;max-width:95vw;box-shadow:0 24px 80px rgba(27,42,74,.35)}
@@ -64,6 +76,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .login-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
 .login-btn{padding:13px 8px;border-radius:10px;border:2px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:.88rem;font-weight:500;color:var(--navy);transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:4px}
 .login-btn:hover{border-color:var(--blue);background:var(--sky);color:var(--blue)}
+.login-btn.my-cal{background:#FFFDE7;border-color:#F9C340}
+.login-btn.my-cal:hover{background:#FFF8C5;border-color:#F59E0B;color:var(--navy)}
 .login-btn .av{font-size:1.5rem}
 .login-btn .nm{font-size:.82rem;font-weight:700}
 .login-btn .sb{font-size:.68rem;color:var(--muted)}
@@ -335,12 +349,21 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
   </div>
 </div>
 
+<!-- メンバー選択（パスワード認証後） -->
+<div id="memberSelectScreen">
+  <div class="ms-box">
+    <h1>👤 あなたは誰ですか？</h1>
+    <p>ログインするメンバーを選んでください</p>
+    <div class="ms-grid" id="memberSelectGrid"></div>
+  </div>
+</div>
+
 <!-- ログイン -->
 <div id="loginScreen">
   <div class="login-row">
     <div class="login-box">
       <h1 id="loginTitle">📅 行動予定カレンダー</h1>
-      <p>あなたの名前を選んでください</p>
+      <p>誰のカレンダーを表示しますか？</p>
       <div class="cloud-badge"><span class="pulse"></span>Firebaseでリアルタイム共有中</div>
       <div class="login-year">
         <button class="ly-btn" onclick="changeYear(-1)">◀</button>
@@ -701,9 +724,9 @@ window.checkPassword = async function() {
     sessionStorage.removeItem('pw_lock_until');
     sessionStorage.setItem('cal_pw_ok', '1');
     document.getElementById('passwordScreen').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'flex';
     err.textContent = '';
     inp.value = '';
+    showMemberSelectScreen();
   } else {
     const newAttempts = attempts + 1;
     sessionStorage.setItem('pw_attempts', newAttempts);
@@ -723,7 +746,7 @@ window.checkPassword = async function() {
 async function showPasswordScreenIfNeeded() {
   await loadPassword();
   if (!storedPasswordHash) {
-    // パスワード未設定 → そのままログイン画面へ
+    // パスワード未設定 → メンバー選択画面へ
     return false;
   }
   // セッション内で既に認証済みか
@@ -822,6 +845,32 @@ function updateYearLabels(){
   document.getElementById('fySubtitle').textContent=`${fyYear}年4月〜${fyYear+1}年3月 | Firebase リアルタイム共有`;
 }
 
+// ═══ メンバー選択画面（パスワード後） ════════════════════════
+function showMemberSelectScreen() {
+  const grid = document.getElementById('memberSelectGrid');
+  const active = members.filter(n => n && n.trim());
+  if (!active.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#7A8BAA;font-size:.82rem;padding:18px 0">メンバーが登録されていません。<br>「メンバー設定」から登録してください。</div>';
+  } else {
+    grid.innerHTML = members.map((name, i) => {
+      if (!name || !name.trim()) return '';
+      return `<button class="ms-btn" onclick="selectMyself(${i})">
+        <span class="av">${AVATARS[i]}</span>
+        <span class="nm">${esc(name)}</span>
+        <span class="sb">自分はこれ</span>
+      </button>`;
+    }).join('');
+  }
+  document.getElementById('memberSelectScreen').style.display = 'flex';
+}
+
+window.selectMyself = function(idx) {
+  myIndex = idx;
+  document.getElementById('memberSelectScreen').style.display = 'none';
+  renderLoginScreen();
+  document.getElementById('loginScreen').style.display = 'flex';
+};
+
 // ═══ ログイン ══════════════════════════════════════════════
 function renderLoginScreen(){
   const grid=document.getElementById('loginGrid');
@@ -830,12 +879,23 @@ function renderLoginScreen(){
     grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#7A8BAA;font-size:.82rem;padding:18px 0">メンバーが登録されていません。<br>「メンバー設定」から登録してください。</div>';
     return;
   }
+  // ログイン画面の説明文を更新
+  const loginSubP = document.querySelector('#loginScreen .login-box > p');
+  if (loginSubP) {
+    const myName = myIndex >= 0 && members[myIndex] ? members[myIndex] : '';
+    loginSubP.textContent = myName
+      ? `${myName}さん、誰のカレンダーを表示しますか？`
+      : '誰のカレンダーを表示しますか？';
+  }
   grid.innerHTML=members.map((name,i)=>{
     if(!name||!name.trim())return'';
-    return`<button class="login-btn" onclick="login(${i})">
+    const isMe = i === myIndex;
+    const myCls = isMe ? 'my-cal' : '';
+    const myLabel = isMe ? '⭐ 自分のカレンダー' : 'タップして表示';
+    return`<button class="login-btn ${myCls}" onclick="login(${i})">
       <span class="av">${AVATARS[i]}</span>
       <span class="nm">${esc(name)}</span>
-      <span class="sb">タップしてログイン</span>
+      <span class="sb">${myLabel}</span>
     </button>`;
   }).join('');
 }
@@ -848,8 +908,8 @@ window.login=function(idx){
 window.logout=function(){
   stopListeners();myIndex=-1;viewIndex=-1;
   document.getElementById('appScreen').style.display='none';
-  document.getElementById('loginScreen').style.display='flex';
-  renderLoginScreen();
+  document.getElementById('loginScreen').style.display='none';
+  showMemberSelectScreen();
 };
 
 // ═══ レンダー ══════════════════════════════════════════════
@@ -1250,7 +1310,14 @@ window._openChat=function(){
 window._closeChat=function(){
   document.getElementById('chatScreen').style.display='none';
   if(chatFrom==='app'){document.getElementById('appScreen').style.display='block';}
-  else{document.getElementById('loginScreen').style.display='flex';renderLoginScreen();}
+  else{
+    if(myIndex>=0){
+      renderLoginScreen();
+      document.getElementById('loginScreen').style.display='flex';
+    } else {
+      showMemberSelectScreen();
+    }
+  }
 };
 
 window.chatSend=async function(){
@@ -1304,8 +1371,7 @@ async function chatPurge(){
     document.getElementById('loadingScreen').style.display='none';
     const needPw = await showPasswordScreenIfNeeded();
     if (!needPw) {
-      renderLoginScreen();
-      document.getElementById('loginScreen').style.display='flex';
+      showMemberSelectScreen();
     }
   }catch(e){
     document.getElementById('loadingScreen').style.display='none';
