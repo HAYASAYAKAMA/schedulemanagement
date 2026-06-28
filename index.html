@@ -213,6 +213,10 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .srow label{font-size:.76rem;color:var(--muted);width:50px;flex-shrink:0}
 .srow input{flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.88rem;color:var(--navy);outline:none;transition:border .15s}
 .srow input:focus{border-color:var(--blue)}
+.srow-desc{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--border)}
+.srow-desc label{font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px;font-weight:500}
+.srow-desc textarea{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.82rem;color:var(--navy);outline:none;resize:vertical;height:64px;transition:border .15s}
+.srow-desc textarea:focus{border-color:var(--blue)}
 .sbtns{display:flex;gap:9px;margin-top:18px}
 .sbtn{flex:1;padding:11px;border-radius:8px;border:none;font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer}
 .sbtn-cancel{background:var(--bg);color:var(--muted)}
@@ -297,6 +301,17 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
   border:5px solid transparent;border-top-color:var(--navy);
 }
 .av-wrap:hover .av-tip{display:block}
+
+/* ── アニマルプロフィールモーダル ── */
+.animal-modal-bg{display:none;position:fixed;inset:0;background:rgba(27,42,74,.6);z-index:800;align-items:center;justify-content:center;padding:16px}
+.animal-modal-bg.show{display:flex}
+.animal-modal{background:#fff;border-radius:20px;padding:28px 24px 24px;width:360px;max-width:95vw;box-shadow:0 24px 80px rgba(27,42,74,.35);text-align:center;position:relative}
+.animal-modal-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);line-height:1}
+.animal-modal-img{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--border);margin:0 auto 14px;display:block}
+.animal-modal-name{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:4px}
+.animal-modal-member{font-size:.78rem;color:var(--blue);font-weight:600;margin-bottom:12px}
+.animal-modal-desc{font-size:.84rem;color:var(--text);line-height:1.7;background:var(--bg);border-radius:10px;padding:12px 14px;text-align:left;min-height:48px;white-space:pre-wrap}
+.animal-modal-desc.empty{color:var(--muted);font-style:italic}
 
 footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 
@@ -534,6 +549,17 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
   </div>
 </div>
 
+<!-- アニマルプロフィールモーダル -->
+<div class="animal-modal-bg" id="animalModalBg" onclick="if(event.target===this)closeAnimalModal()">
+  <div class="animal-modal">
+    <button class="animal-modal-close" onclick="closeAnimalModal()">✕</button>
+    <img class="animal-modal-img" id="animalModalImg" src="" alt="">
+    <div class="animal-modal-name" id="animalModalAnimalName"></div>
+    <div class="animal-modal-member" id="animalModalMemberName"></div>
+    <div class="animal-modal-desc" id="animalModalDesc"></div>
+  </div>
+</div>
+
 <!-- Leaflet -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
@@ -660,7 +686,8 @@ const AVATAR_IMGS = [
 
 function avImg(i, cls='av-img'){
   const av = AVATAR_IMGS[i] || AVATAR_IMGS[0];
-  return `<span class="av-wrap"><img class="${cls}" src="${av.src}" alt="${av.name}"><span class="av-tip">${av.name}</span></span>`;
+  const clickable = cls === 'av-img' ? `onclick="openAnimalModal(${i})" style="cursor:pointer"` : '';
+  return `<span class="av-wrap" ${clickable}><img class="${cls}" src="${av.src}" alt="${av.name}"><span class="av-tip">${av.name}</span></span>`;
 }
 
 const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
@@ -670,6 +697,7 @@ function buildFY(y){return[{y,m:3},{y,m:4},{y,m:5},{y,m:6},{y,m:7},{y,m:8},{y,m:
 
 // ═══ 状態 ══════════════════════════════════════════════════
 let members=Array(10).fill('');
+let descriptions=Array(10).fill('');
 let myIndex=-1, viewIndex=-1, fyYear=2026;
 let FY_MONTHS=buildFY(fyYear), currentFYIndex=0;
 let allData={};
@@ -690,6 +718,7 @@ function defaultFYIndex(){const now=new Date();const idx=FY_MONTHS.findIndex(e=>
 // ═══ Firebase DB操作 ═══════════════════════════════════════
 const DB_MEMBERS = 'members';
 const DB_PASSWORD = 'app_password';
+const DB_DESCRIPTIONS = 'animal_descriptions';
 function dbDataKey(yr){return`data_${yr}`}
 
 async function fbGet(path){
@@ -802,6 +831,9 @@ async function initData(){
   // メンバー
   const mraw=await fbGet(DB_MEMBERS);
   if(mraw)members=mraw; else members=Array(10).fill('');
+  // 説明文
+  const draw2=await fbGet(DB_DESCRIPTIONS);
+  if(draw2)descriptions=draw2; else descriptions=Array(10).fill('');
   // データ
   const draw=await fbGet(dbDataKey(fyYear));
   if(draw){allData=draw.allData||{};if(draw.fyIndex!=null)currentFYIndex=draw.fyIndex;}
@@ -822,6 +854,13 @@ function startListeners(){
         if(myIndex>=0)renderPersonTabs();
         showSyncBar('recv','👥 メンバー情報が更新されました');
       }
+    }
+  });
+
+  // 説明文のリアルタイム監視
+  fbListen(DB_DESCRIPTIONS,(val)=>{
+    if(val&&JSON.stringify(val)!==JSON.stringify(descriptions)){
+      descriptions=val;
     }
   });
 
@@ -1134,10 +1173,16 @@ async function renderToday(){
 // ═══ 設定パネル ════════════════════════════════════════════
 window.openSettings=function(){
   const rows=document.getElementById('settingsRows');
-  rows.innerHTML=members.map((name,i)=>
-    `<div class="srow"><label>${avImg(i,'av-img-sm')} ${i+1}.</label>
-    <input type="text" id="sn${i}" value="${esc(name||'')}" placeholder="名前（未入力で非表示）" maxlength="20"></div>`
-  ).join('');
+  rows.innerHTML=members.map((name,i)=>{
+    const av=AVATAR_IMGS[i]||AVATAR_IMGS[0];
+    const desc=descriptions[i]||'';
+    return `<div class="srow-desc">
+      <div class="srow" style="margin-bottom:6px"><label><img src="${av.src}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle"> ${i+1}.</label>
+      <input type="text" id="sn${i}" value="${esc(name||'')}" placeholder="名前（未入力で非表示）" maxlength="20"></div>
+      <label style="font-size:.72rem;color:var(--muted);padding-left:50px">${av.name}の説明文</label>
+      <textarea id="sd${i}" placeholder="自己紹介や説明を入力できます（任意）" style="width:calc(100% - 50px);margin-left:50px;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.82rem;color:var(--navy);outline:none;resize:vertical;height:64px">${esc(desc)}</textarea>
+    </div>`;
+  }).join('');
   document.getElementById('settingsBg').classList.add('show');
 };
 window.closeSettings=function(){document.getElementById('settingsBg').classList.remove('show')};
@@ -1156,6 +1201,7 @@ window.removePw = async function() {
 
 window.saveSettings=async function(){
   members=members.map((_,i)=>document.getElementById('sn'+i).value.trim());
+  descriptions=descriptions.map((_,i)=>(document.getElementById('sd'+i)||{value:''}).value.trim());
   // パスワード変更
   const pw1 = document.getElementById('newPwInp').value;
   const pw2 = document.getElementById('newPwInp2').value;
@@ -1177,10 +1223,34 @@ window.saveSettings=async function(){
   document.getElementById('newPwInp').value = '';
   document.getElementById('newPwInp2').value = '';
   const ok=await fbSet(DB_MEMBERS,members);
+  await fbSet(DB_DESCRIPTIONS,descriptions);
   window.closeSettings();
   renderLoginScreen();
   if(myIndex>=0)renderPersonTabs();
   if(ok)showToast('✅ メンバー名を保存しました（全員に即座に反映されます）');
+};
+
+// ═══ アニマルプロフィールモーダル ═══════════════════════════
+window.openAnimalModal=function(i){
+  const av=AVATAR_IMGS[i]||AVATAR_IMGS[0];
+  const memberName=members[i]||'（未設定）';
+  const desc=descriptions[i]||'';
+  document.getElementById('animalModalImg').src=av.src;
+  document.getElementById('animalModalImg').alt=av.name;
+  document.getElementById('animalModalAnimalName').textContent=av.name;
+  document.getElementById('animalModalMemberName').textContent=memberName;
+  const descEl=document.getElementById('animalModalDesc');
+  if(desc){
+    descEl.textContent=desc;
+    descEl.classList.remove('empty');
+  } else {
+    descEl.textContent='説明文はまだ設定されていません。設定画面から追加できます。';
+    descEl.classList.add('empty');
+  }
+  document.getElementById('animalModalBg').classList.add('show');
+};
+window.closeAnimalModal=function(){
+  document.getElementById('animalModalBg').classList.remove('show');
 };
 
 // ═══ トースト ══════════════════════════════════════════════
