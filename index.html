@@ -453,7 +453,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
   <header>
     <div class="h-left">
       <h1>💬 メンバーチャット</h1>
-      <p>1週間以上前のメッセージは自動削除されます</p>
+      <p id="chatSubtitle">1週間以上前のメッセージは自動削除されます</p>
     </div>
     <button class="hbtn" onclick="window._closeChat&&window._closeChat()">← 戻る</button>
   </header>
@@ -1303,21 +1303,30 @@ let chatMsgs={},unsubChat=null,chatFrom='login';
 function chatMyName(){return myIndex>=0?(members[myIndex]||`メンバー${myIndex+1}`):'ゲスト'}
 
 function hideAll(){
-  ['loginScreen','appScreen','todayScreen','mapScreen','chatScreen'].forEach(id=>{
+  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
 }
 
 window._openChat=function(){
-  chatFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
+  const appVisible=document.getElementById('appScreen').style.display==='block';
+  chatFrom=appVisible?'app':'login';
   hideAll();
   document.getElementById('chatScreen').style.display='block';
+  // サブタイトル更新
+  const sub=document.getElementById('chatSubtitle');
+  if(sub){
+    const name=myIndex>=0&&members[myIndex]?members[myIndex]:'未選択';
+    sub.textContent=`${name}としてログイン中 ｜ 1週間以上前のメッセージは自動削除`;
+  }
   if(!unsubChat){
     unsubChat=fbListen(DB_CHAT,val=>{
       chatMsgs=val||{};
       chatPurge();
       chatRenderMsgs();
     });
+  } else {
+    chatRenderMsgs();
   }
 };
 
@@ -1339,7 +1348,10 @@ window.chatSend=async function(){
   if(!txt)return;
   const text=txt.value.trim();
   if(!text)return;
-  if(myIndex<0){showToast('⚠️ 先に名前を選んでください');return;}
+  if(myIndex<0){
+    showToast('⚠️ 先にメンバーを選んでください');
+    return;
+  }
   txt.value='';txt.style.height='auto';
   const mid='m'+Date.now()+Math.random().toString(36).slice(2,6);
   await fbSet(DB_CHAT+'/'+mid,{text,si:myIndex,name:chatMyName(),ts:Date.now()});
