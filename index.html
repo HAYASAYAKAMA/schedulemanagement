@@ -662,7 +662,11 @@ async function fbGet(path){
   try{const snap=await get(ref(db,path));return snap.exists()?snap.val():null}catch(e){return null}
 }
 async function fbSet(path,val){
-  try{await set(ref(db,path),val);return true}catch(e){showSyncBar('err','❌ 保存に失敗しました');return false}
+  try{await set(ref(db,path),val);return true}catch(e){
+    console.error('fbSet error:',path,e);
+    showSyncBar('err','❌ 保存に失敗しました: '+e.message);
+    return false;
+  }
 }
 function fbListen(path, cb){
   const r=ref(db,path);
@@ -1354,7 +1358,16 @@ window.chatSend=async function(){
   }
   txt.value='';txt.style.height='auto';
   const mid='m'+Date.now()+Math.random().toString(36).slice(2,6);
-  await fbSet(DB_CHAT+'/'+mid,{text,si:myIndex,name:chatMyName(),ts:Date.now()});
+  const payload={text,si:myIndex,name:chatMyName(),ts:Date.now()};
+  console.log('chatSend sending:',DB_CHAT+'/'+mid, payload);
+  const ok=await fbSet(DB_CHAT+'/'+mid,payload);
+  if(!ok){
+    // 送信失敗時はテキストを戻す
+    txt.value=text;
+    showToast('❌ 送信に失敗しました。Firebaseのルールを確認してください。');
+  } else {
+    console.log('chatSend success');
+  }
 };
 
 function chatRenderMsgs(){
