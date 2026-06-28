@@ -245,25 +245,8 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 
 /* ── チャット ── */
 #chatScreen{display:none}
-.chat-layout{display:flex;height:calc(100vh - 54px);overflow:hidden}
-.chat-sidebar{width:210px;flex-shrink:0;border-right:1px solid var(--border);background:#fff;display:flex;flex-direction:column}
-.chat-sidebar-head{padding:11px 14px;font-size:.8rem;font-weight:700;color:var(--navy);border-bottom:1px solid var(--border);background:var(--bg)}
-.room-list{flex:1;overflow-y:auto;padding:6px}
-.room-item{padding:9px 11px;border-radius:8px;cursor:pointer;font-size:.82rem;color:var(--navy);font-weight:500;display:flex;align-items:center;gap:7px;transition:background .12s}
-.room-item:hover{background:var(--sky)}
-.room-item.active{background:var(--blue);color:#fff}
-.room-unread{margin-left:auto;background:#E03E3E;color:#fff;font-size:.6rem;font-weight:700;border-radius:99px;padding:1px 6px;flex-shrink:0}
-.room-add-area{padding:10px;border-top:1px solid var(--border)}
-.room-add-inp{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.8rem;color:var(--navy);outline:none;margin-bottom:6px}
-.room-add-inp:focus{border-color:var(--blue)}
-.room-add-btn{width:100%;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer}
-.room-add-btn:hover{background:#1a56cb}
-.chat-main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
-.chat-no-room{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--muted);font-size:.88rem}
-.chat-head{padding:10px 16px;border-bottom:1px solid var(--border);background:#fff;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.chat-head-name{font-size:.92rem;font-weight:700;color:var(--navy)}
-.chat-head-meta{font-size:.68rem;color:var(--muted)}
-.chat-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 54px)}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
 .chat-empty{text-align:center;color:var(--muted);font-size:.82rem;margin:auto;padding:30px 0}
 .chat-date-sep{text-align:center;font-size:.66rem;color:var(--muted);margin:4px 0;display:flex;align-items:center;gap:8px}
 .chat-date-sep::before,.chat-date-sep::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -274,7 +257,7 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .chat-bubble{background:#fff;border:1px solid var(--border);border-radius:3px 12px 12px 12px;padding:8px 12px;box-shadow:0 1px 3px rgba(27,42,74,.07);max-width:100%}
 .chat-row.me .chat-bubble{background:var(--blue);color:#fff;border-color:transparent;border-radius:12px 3px 12px 12px}
 .chat-bubble-name{font-size:.65rem;font-weight:700;color:var(--blue);margin-bottom:2px}
-.chat-row.me .chat-bubble-name{color:rgba(255,255,255,.8)}
+.chat-row.me .chat-bubble-name{display:none}
 .chat-bubble-text{font-size:.84rem;line-height:1.55;word-break:break-word;white-space:pre-wrap}
 .chat-bubble-time{font-size:.62rem;color:var(--muted);margin-top:3px;text-align:right}
 .chat-row.me .chat-bubble-time{color:rgba(255,255,255,.7)}
@@ -283,15 +266,7 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .chat-input-row textarea:focus{border-color:var(--blue)}
 .chat-send{width:42px;height:42px;background:var(--blue);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .chat-send:hover{background:#1a56cb}
-@media(max-width:700px){
-  .chat-sidebar{width:60px}
-  .chat-sidebar-head{font-size:.6rem;padding:8px 4px;text-align:center}
-  .room-item{flex-direction:column;padding:7px 4px;font-size:.7rem;text-align:center;gap:1px}
-  .room-add-area{padding:6px 4px}
-  .room-add-inp{font-size:.72rem;padding:6px 6px}
-  .room-add-btn{font-size:.68rem;padding:6px 2px}
-  .chat-row{max-width:90%}
-}
+@media(max-width:700px){.chat-row{max-width:90%}.chat-msgs{padding:10px 8px}}
 
 footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 
@@ -454,22 +429,17 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
   <header>
     <div class="h-left">
       <h1>💬 メンバーチャット</h1>
-      <p>ルームを選んでメッセージを送ろう</p>
+      <p>1週間以上前のメッセージは自動削除されます</p>
     </div>
     <button class="hbtn" onclick="window._closeChat&&window._closeChat()">← 戻る</button>
   </header>
-  <div class="chat-layout">
-    <div class="chat-sidebar">
-      <div class="chat-sidebar-head">💬 ルーム一覧</div>
-      <div id="roomList" class="room-list"></div>
-      <div class="room-add-area">
-        <input type="text" id="newRoomInp" class="room-add-inp" placeholder="新しいルーム名" maxlength="20"
-          onkeydown="if(event.key==='Enter')window._addRoom&&window._addRoom()">
-        <button class="room-add-btn" onclick="window._addRoom&&window._addRoom()">＋ 作成</button>
-      </div>
-    </div>
-    <div id="chatMain" class="chat-main">
-      <div class="chat-no-room"><div style="font-size:2.5rem">💬</div><div>ルームを選んでください</div></div>
+  <div class="chat-wrap">
+    <div class="chat-msgs" id="chatMsgArea"><div class="chat-empty">まだメッセージがありません</div></div>
+    <div class="chat-input-row">
+      <textarea id="chatTxt" rows="1" placeholder="メッセージを入力… (Shift+Enterで改行)"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.chatSend&&window.chatSend()}"></textarea>
+      <button class="chat-send" onclick="window.chatSend&&window.chatSend()">➤</button>
     </div>
   </div>
 </div>
@@ -1251,13 +1221,12 @@ window.deletePin=async function(){
 };
 
 // ═══ チャット機能 ════════════════════════════════════════════
-const DB_CHAT='chat';
+// ═══ チャット機能 ════════════════════════════════════════════
+const DB_CHAT='chat/messages';
 const CHAT_TTL=7*24*60*60*1000;
-let chatRooms={},currentRoomId=null,chatMsgs={};
-let unsubRooms=null,unsubMsgs=null,chatFrom='login';
+let chatMsgs={},unsubChat=null,chatFrom='login';
 
 function chatMyName(){return myIndex>=0?(members[myIndex]||`メンバー${myIndex+1}`):'ゲスト'}
-function chatMyAv(){return myIndex>=0?AVATARS[myIndex]:'🧑'}
 
 function hideAll(){
   ['loginScreen','appScreen','todayScreen','mapScreen','chatScreen'].forEach(id=>{
@@ -1269,10 +1238,11 @@ window._openChat=function(){
   chatFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
   hideAll();
   document.getElementById('chatScreen').style.display='block';
-  if(!unsubRooms){
-    unsubRooms=fbListen(DB_CHAT+'/rooms',val=>{
-      chatRooms=val||{};
-      renderRoomList();
+  if(!unsubChat){
+    unsubChat=fbListen(DB_CHAT,val=>{
+      chatMsgs=val||{};
+      chatPurge();
+      chatRenderMsgs();
     });
   }
 };
@@ -1283,93 +1253,22 @@ window._closeChat=function(){
   else{document.getElementById('loginScreen').style.display='flex';renderLoginScreen();}
 };
 
-window._addRoom=async function(){
-  const inp=document.getElementById('newRoomInp');
-  const name=(inp?.value||'').trim();
-  if(!name){showToast('⚠️ ルーム名を入力してください');return;}
-  const icons=['💬','🌟','📢','🎉','🏖️','📚','🎮','☕','🔥','💡'];
-  const icon=icons[Math.floor(Math.random()*icons.length)];
-  const id='r'+Date.now()+Math.random().toString(36).slice(2,5);
-  const ok=await fbSet(DB_CHAT+'/rooms/'+id,{name,icon,createdAt:Date.now(),updatedAt:Date.now(),by:chatMyName()});
-  if(ok){inp.value='';showToast('✅ ルーム「'+name+'」を作成しました');chatSelectRoom(id);}
-};
-
-function renderRoomList(){
-  const el=document.getElementById('roomList');
-  if(!el)return;
-  const lastRead=JSON.parse(localStorage.getItem('chat_lr')||'{}');
-  const entries=Object.entries(chatRooms).filter(([,r])=>r).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
-  if(!entries.length){
-    el.innerHTML='<div style="padding:12px 8px;font-size:.75rem;color:var(--muted);text-align:center">ルームなし</div>';
-    return;
-  }
-  el.innerHTML=entries.map(([id,r])=>{
-    const msgs=chatMsgs[id]||{};
-    const lr=lastRead[id]||0;
-    const unread=Object.values(msgs).filter(m=>m&&m.ts>lr&&m.si!==myIndex).length;
-    const active=id===currentRoomId;
-    return`<div class="room-item${active?' active':''}" onclick="chatSelectRoom('${esc(id)}')">
-      <span>${r.icon||'💬'}</span>
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</span>
-      ${unread&&!active?`<span class="room-unread">${unread}</span>`:''}
-    </div>`;
-  }).join('');
-}
-
-window.chatSelectRoom=function(id){
-  currentRoomId=id;
-  // 既読更新
-  const lr=JSON.parse(localStorage.getItem('chat_lr')||'{}');
-  lr[id]=Date.now();localStorage.setItem('chat_lr',JSON.stringify(lr));
-  renderRoomList();
-  if(unsubMsgs){unsubMsgs();unsubMsgs=null;}
-  // チャットメインUI描画
-  const room=chatRooms[id]||{};
-  const main=document.getElementById('chatMain');
-  if(!main)return;
-  main.innerHTML=`
-    <div class="chat-head">
-      <span style="font-size:1.3rem">${room.icon||'💬'}</span>
-      <div><div class="chat-head-name">${esc(room.name||id)}</div>
-      <div class="chat-head-meta">1週間以上前のメッセージは自動削除されます</div></div>
-    </div>
-    <div class="chat-msgs" id="chatMsgArea"><div class="chat-empty">メッセージがありません</div></div>
-    <div class="chat-input-row">
-      <textarea id="chatTxt" rows="1" placeholder="メッセージを入力… (Shift+Enterで改行)"
-        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend()}"></textarea>
-      <button class="chat-send" onclick="chatSend()">➤</button>
-    </div>`;
-  // メッセージリスナー
-  unsubMsgs=fbListen(DB_CHAT+'/msgs/'+id,val=>{
-    chatMsgs[id]=val||{};
-    chatPurge(id);
-    chatRenderMsgs(id);
-    // 既読更新
-    const lr2=JSON.parse(localStorage.getItem('chat_lr')||'{}');
-    lr2[id]=Date.now();localStorage.setItem('chat_lr',JSON.stringify(lr2));
-    renderRoomList();
-  });
-};
-
 window.chatSend=async function(){
   const txt=document.getElementById('chatTxt');
-  if(!txt||!currentRoomId)return;
+  if(!txt)return;
   const text=txt.value.trim();
   if(!text)return;
   if(myIndex<0){showToast('⚠️ 先に名前を選んでください');return;}
   txt.value='';txt.style.height='auto';
   const mid='m'+Date.now()+Math.random().toString(36).slice(2,6);
-  await fbSet(DB_CHAT+'/msgs/'+currentRoomId+'/'+mid,{text,si:myIndex,name:chatMyName(),ts:Date.now()});
-  await fbSet(DB_CHAT+'/rooms/'+currentRoomId+'/updatedAt',Date.now());
+  await fbSet(DB_CHAT+'/'+mid,{text,si:myIndex,name:chatMyName(),ts:Date.now()});
 };
 
-function chatRenderMsgs(id){
+function chatRenderMsgs(){
   const area=document.getElementById('chatMsgArea');
-  if(!area||id!==currentRoomId)return;
-  const msgs=chatMsgs[id]||{};
-  const list=Object.values(msgs).filter(m=>m&&m.ts).sort((a,b)=>a.ts-b.ts);
-  if(!list.length){area.innerHTML='<div class="chat-empty">メッセージがありません</div>';return;}
+  if(!area)return;
+  const list=Object.values(chatMsgs).filter(m=>m&&m.ts).sort((a,b)=>a.ts-b.ts);
+  if(!list.length){area.innerHTML='<div class="chat-empty">まだメッセージがありません</div>';return;}
   let html='',lastDate='';
   list.forEach(m=>{
     const d=new Date(m.ts);
@@ -1377,25 +1276,25 @@ function chatRenderMsgs(id){
     if(ds!==lastDate){html+=`<div class="chat-date-sep">${esc(ds)}</div>`;lastDate=ds;}
     const ts=d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
     const isMe=m.si===myIndex&&myIndex>=0;
-    const av=AVATARS[m.si>=0?m.si:0]||'🧑';
+    const av=AVATARS[m.si>=0&&m.si<AVATARS.length?m.si:0];
     html+=`<div class="chat-row${isMe?' me':''}">
       <div class="chat-av">${av}</div>
       <div class="chat-bubble">
-        ${!isMe?`<div class="chat-bubble-name">${esc(m.name||'不明')}</div>`:''}
+        <div class="chat-bubble-name">${esc(m.name||'不明')}</div>
         <div class="chat-bubble-text">${esc(m.text)}</div>
         <div class="chat-bubble-time">${ts}</div>
       </div>
     </div>`;
   });
+  const wasBottom=area.scrollHeight-area.scrollTop-area.clientHeight<60;
   area.innerHTML=html;
-  area.scrollTop=area.scrollHeight;
+  if(wasBottom)area.scrollTop=area.scrollHeight;
 }
 
-async function chatPurge(id){
-  const msgs=chatMsgs[id]||{};
+async function chatPurge(){
   const cut=Date.now()-CHAT_TTL;
-  for(const [k,m] of Object.entries(msgs)){
-    if(m&&m.ts<cut)await fbSet(DB_CHAT+'/msgs/'+id+'/'+k,null);
+  for(const [k,m] of Object.entries(chatMsgs)){
+    if(m&&m.ts<cut)await fbSet(DB_CHAT+'/'+k,null);
   }
 }
 // ─── 初期化 ───────────────────────────────────────────────
