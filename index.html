@@ -539,8 +539,8 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 <!-- 設定パネル -->
 <div class="settings-bg" id="settingsBg" onclick="if(event.target===this)closeSettings()">
   <div class="settings-box">
-    <h2>⚙ メンバー名の設定</h2>
-    <p>最大10名まで登録できます。空欄のメンバーはログイン画面に表示されません。<br>設定はFirebaseに保存され全員に即座に反映されます。</p>
+    <h2>⚙ メンバー設定</h2>
+    <p>最大10名まで登録できます。空欄のメンバーはログイン画面に表示されません。<br>🐾アイコンまたは✏️ボタンをクリックすると各動物の説明文を編集できます。</p>
     <div id="settingsRows"></div>
     <div style="border-top:1px solid var(--border);margin:18px 0 14px"></div>
     <h2 style="margin-bottom:6px">🔒 アクセスパスワード</h2>
@@ -1222,19 +1222,62 @@ async function renderToday(){
 }
 
 // ═══ 設定パネル ════════════════════════════════════════════
-window.openSettings=function(){
+window.openSettings=function(focusIdx){
   const rows=document.getElementById('settingsRows');
   rows.innerHTML=members.map((name,i)=>{
     const av=AVATAR_IMGS[i]||AVATAR_IMGS[0];
     const desc=descriptions[i]||'';
-    return `<div class="srow-desc">
-      <div class="srow" style="margin-bottom:6px"><label><img src="${av.src}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;vertical-align:middle"> ${i+1}.</label>
-      <input type="text" id="sn${i}" value="${esc(name||'')}" placeholder="名前（未入力で非表示）" maxlength="20"></div>
-      <label style="font-size:.72rem;color:var(--muted);padding-left:50px">${av.name}の説明文</label>
-      <textarea id="sd${i}" placeholder="自己紹介や説明を入力できます（任意）" style="width:calc(100% - 50px);margin-left:50px;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.82rem;color:var(--navy);outline:none;resize:vertical;height:64px">${esc(desc)}</textarea>
+    return `<div class="srow-item" id="srow-item-${i}">
+      <div class="srow">
+        <label>
+          <img src="${av.src}" class="srow-av-icon" onclick="toggleDescPanel(${i})" title="${av.name}の説明文を編集" style="width:32px;height:32px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid var(--border);transition:border .15s;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
+        </label>
+        <input type="text" id="sn${i}" value="${esc(name||'')}" placeholder="名前（未入力で非表示）" maxlength="20">
+        <button onclick="toggleDescPanel(${i})" title="説明文を編集" style="flex-shrink:0;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.7rem;color:var(--muted)">✏️</button>
+      </div>
+      <div class="srow-desc-panel" id="srow-desc-${i}" style="display:none;margin:6px 0 10px 42px;padding:10px;background:var(--sky);border-radius:8px;border:1px solid var(--blue)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <img src="${av.src}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">
+          <span style="font-size:.75rem;font-weight:700;color:var(--navy)">${av.name}の説明文</span>
+        </div>
+        <textarea id="sd${i}" placeholder="自己紹介や説明を入力できます（任意）" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.82rem;color:var(--navy);outline:none;resize:vertical;height:72px">${esc(desc)}</textarea>
+        <div style="text-align:right;margin-top:4px">
+          <button onclick="saveDescPanel(${i})" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;font-family:inherit">💾 保存</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
   document.getElementById('settingsBg').classList.add('show');
+  // フォーカス指定がある場合は展開してスクロール
+  if(focusIdx!=null){
+    setTimeout(()=>{
+      toggleDescPanel(focusIdx, true);
+      const el=document.getElementById('sd'+focusIdx);
+      if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}
+    },150);
+  }
+};
+
+window.toggleDescPanel=function(i, forceOpen){
+  const panel=document.getElementById('srow-desc-'+i);
+  if(!panel)return;
+  const isOpen=panel.style.display!=='none';
+  if(forceOpen){panel.style.display='block';return;}
+  panel.style.display=isOpen?'none':'block';
+  if(!isOpen){
+    setTimeout(()=>{const ta=document.getElementById('sd'+i);if(ta)ta.focus();},50);
+  }
+};
+
+window.saveDescPanel=async function(i){
+  const ta=document.getElementById('sd'+i);
+  if(!ta)return;
+  descriptions[i]=ta.value.trim();
+  await fbSet(DB_DESCRIPTIONS,[...descriptions]);
+  showToast('✅ 説明文を保存しました');
+  // パネルを一時的に緑縁にして保存完了を示す
+  const panel=document.getElementById('srow-desc-'+i);
+  if(panel){panel.style.borderColor='#16A34A';setTimeout(()=>{if(panel)panel.style.borderColor='var(--blue)';},1500);}
 };
 window.closeSettings=function(){document.getElementById('settingsBg').classList.remove('show')};
 window.removePw = async function() {
@@ -1251,8 +1294,16 @@ window.removePw = async function() {
 };
 
 window.saveSettings=async function(){
-  members=members.map((_,i)=>document.getElementById('sn'+i).value.trim());
-  descriptions=descriptions.map((_,i)=>(document.getElementById('sd'+i)||{value:''}).value.trim());
+  // 名前を取得・保存
+  members=members.map((_,i)=>{
+    const el=document.getElementById('sn'+i);
+    return el?el.value.trim():'';
+  });
+  // 展開中のdescpanelがあれば値を同期
+  descriptions=descriptions.map((d,i)=>{
+    const ta=document.getElementById('sd'+i);
+    return ta?ta.value.trim():d;
+  });
   // パスワード変更
   const pw1 = document.getElementById('newPwInp').value;
   const pw2 = document.getElementById('newPwInp2').value;
@@ -1309,12 +1360,7 @@ window.openAnimalModal=function(i){
 };
 window.openSettingsForAnimal=function(){
   closeAnimalModal();
-  // 設定画面を開いて該当メンバーの説明欄にフォーカス
-  openSettings();
-  setTimeout(()=>{
-    const el=document.getElementById('sd'+_currentAnimalIdx);
-    if(el){el.focus();el.scrollIntoView({behavior:'smooth',block:'center'});}
-  },200);
+  openSettings(_currentAnimalIdx);
 };
 
 // ═══ トースト ══════════════════════════════════════════════
