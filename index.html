@@ -1738,8 +1738,10 @@ window._roomJoin=async function(roomId){
   else if(!st.p2){st.p2={idx:myIndex,name};}
   else{showToast('⚠️ このルームは満室です');return}
   st.updatedAt=Date.now();
-  await fbSet(DB_ROOMS+'/'+roomId,st);
+  othRooms={...othRooms,[roomId]:st}; // 楽観的更新：同期反映を待たずに即入室できるようにする
   othEnterRoom(roomId);
+  const ok=await fbSet(DB_ROOMS+'/'+roomId,st);
+  if(!ok)showToast('❌ 入室の保存に失敗しました。通信状況をご確認ください。');
 };
 
 function othEnterRoom(roomId){
