@@ -121,6 +121,17 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .hbtn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:7px;padding:5px 11px;font-family:inherit;font-size:.75rem;cursor:pointer;white-space:nowrap}
 .hbtn:hover{background:rgba(255,255,255,.28)}
 
+/* ── おもちゃ箱 ── */
+#toyboxScreen{display:none}
+.toybox-wrap{max-width:560px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;gap:14px}
+.toybox-card{width:100%;background:#fff;border:1.5px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:0 8px 28px rgba(27,42,74,.1);cursor:pointer;display:flex;align-items:center;gap:16px;font-family:inherit;text-align:left;transition:all .15s}
+.toybox-card:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(27,42,74,.18);border-color:var(--blue)}
+.toybox-card .tb-icon{font-size:2.2rem;flex-shrink:0}
+.toybox-card .tb-info{flex:1}
+.toybox-card .tb-title{font-size:1rem;font-weight:800;color:var(--navy)}
+.toybox-card .tb-desc{font-size:.78rem;color:var(--muted);margin-top:2px}
+.toybox-card .tb-arrow{font-size:1.6rem;color:var(--border);font-weight:700}
+
 /* ── ゲーム（オセロ）── */
 #gameScreen{display:none}
 .game-wrap{max-width:560px;margin:0 auto;padding:18px 14px 40px;display:flex;flex-direction:column;align-items:center;gap:14px}
@@ -492,8 +503,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <button class="quick-box" onclick="openToday()"><span class="qi">📋</span><span class="ql-label">本日の予定</span></button>
       <button class="quick-box" onclick="openMap()"><span class="qi">📍</span><span class="ql-label">土庄町地図</span></button>
       <button class="quick-box" onclick="window._openChat&&window._openChat()"><span class="qi">💬</span><span class="ql-label" id="chatLoginLbl">チャット</span></button>
-      <button class="quick-box" onclick="window._openGame&&window._openGame()"><span class="qi">⚫⚪</span><span class="ql-label">オセロ</span></button>
-      <button class="quick-box" onclick="window._openPoker&&window._openPoker()"><span class="qi">🃏</span><span class="ql-label">ポーカー</span></button>
+      <button class="quick-box" onclick="window._openToybox&&window._openToybox()"><span class="qi">🧸</span><span class="ql-label">おもちゃ箱</span></button>
       <button class="quick-box" onclick="openSettings()"><span class="qi">⚙</span><span class="ql-label">設定</span></button>
       <button class="quick-box" onclick="goToMemberSelect()" style="border:2px solid #D1D9E6"><span class="qi">👤</span><span class="ql-label" style="color:#7A8BAA">メンバー変更</span></button>
     </div>
@@ -516,8 +526,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <button class="hbtn" onclick="openToday()">📋 本日</button>
       <button class="hbtn" onclick="openMap()">📍 地図</button>
       <button class="hbtn" id="chatHbtn" onclick="window._openChat&&window._openChat()">💬 チャット</button>
-      <button class="hbtn" onclick="window._openGame&&window._openGame()">⚫⚪ オセロ</button>
-      <button class="hbtn" onclick="window._openPoker&&window._openPoker()">🃏 ポーカー</button>
+      <button class="hbtn" onclick="window._openToybox&&window._openToybox()">🧸 おもちゃ箱</button>
       <button class="hbtn" onclick="openSettings()">⚙ 設定</button>
       <button class="hbtn" onclick="goToCalendarSelect()">← 戻る</button>
     </div>
@@ -592,6 +601,35 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.chatSend&&window.chatSend()}"></textarea>
       <button class="chat-send" onclick="window.chatSend&&window.chatSend()">➤</button>
     </div>
+  </div>
+</div>
+
+<!-- おもちゃ箱 -->
+<div id="toyboxScreen" style="display:none">
+  <header>
+    <div class="h-left">
+      <h1>🧸 おもちゃ箱</h1>
+      <p>遊びたいゲームを選んでください</p>
+    </div>
+    <button class="hbtn" onclick="window._closeToybox&&window._closeToybox()">← 戻る</button>
+  </header>
+  <div class="toybox-wrap">
+    <button class="toybox-card" onclick="window._openGame&&window._openGame()">
+      <span class="tb-icon">⚫⚪</span>
+      <div class="tb-info">
+        <div class="tb-title">オセロ</div>
+        <div class="tb-desc">2人で対戦・対戦ルーム制</div>
+      </div>
+      <span class="tb-arrow">›</span>
+    </button>
+    <button class="toybox-card" onclick="window._openPoker&&window._openPoker()">
+      <span class="tb-icon">🃏</span>
+      <div class="tb-info">
+        <div class="tb-title">テキサスホールデム</div>
+        <div class="tb-desc">2〜9人で対戦・対戦ルーム制</div>
+      </div>
+      <span class="tb-arrow">›</span>
+    </button>
   </div>
 </div>
 
@@ -1563,7 +1601,7 @@ let chatMsgs={},unsubChat=null,chatFrom='login';
 function chatMyName(){return myIndex>=0?(members[myIndex]||`メンバー${myIndex+1}`):'ゲスト'}
 
 function hideAll(){
-  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen','gameScreen','pokerScreen'].forEach(id=>{
+  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen','toyboxScreen','gameScreen','pokerScreen'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
 }
@@ -1982,7 +2020,7 @@ function othRenderRoomView(){
 }
 
 window._openGame=function(){
-  othFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
+  othFrom=document.getElementById('appScreen').style.display==='block'?'app':'toybox';
   hideAll();
   document.getElementById('gameScreen').style.display='block';
   othShowRoomList();
@@ -1999,6 +2037,7 @@ window._openGame=function(){
 window._closeGame=function(){
   document.getElementById('gameScreen').style.display='none';
   if(othFrom==='app'){document.getElementById('appScreen').style.display='block';}
+  else if(othFrom==='toybox'){document.getElementById('toyboxScreen').style.display='block';}
   else{
     if(myIndex>=0){
       renderLoginScreen();
@@ -2428,7 +2467,7 @@ function pokerRenderRoomView(){
 }
 
 window._openPoker=function(){
-  pokerFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
+  pokerFrom=document.getElementById('appScreen').style.display==='block'?'app':'toybox';
   hideAll();
   document.getElementById('pokerScreen').style.display='block';
   pokerShowRoomList();
@@ -2445,6 +2484,27 @@ window._openPoker=function(){
 window._closePoker=function(){
   document.getElementById('pokerScreen').style.display='none';
   if(pokerFrom==='app'){document.getElementById('appScreen').style.display='block';}
+  else if(pokerFrom==='toybox'){document.getElementById('toyboxScreen').style.display='block';}
+  else{
+    if(myIndex>=0){
+      renderLoginScreen();
+      document.getElementById('loginScreen').style.display='flex';
+    } else {
+      showMemberSelectScreen();
+    }
+  }
+};
+
+// ─── おもちゃ箱 ───────────────────────────────────────────
+let toyboxFrom='login';
+window._openToybox=function(){
+  toyboxFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
+  hideAll();
+  document.getElementById('toyboxScreen').style.display='block';
+};
+window._closeToybox=function(){
+  document.getElementById('toyboxScreen').style.display='none';
+  if(toyboxFrom==='app'){document.getElementById('appScreen').style.display='block';}
   else{
     if(myIndex>=0){
       renderLoginScreen();
