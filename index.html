@@ -173,6 +173,41 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .janken-choices button:hover{border-color:var(--blue);background:var(--sky);transform:translateY(-2px)}
 .janken-choices button:disabled{opacity:.4;cursor:default;transform:none}
 
+/* ── ポーカー ── */
+#pokerScreen{display:none}
+.poker-wrap{max-width:920px;margin:0 auto;padding:18px 14px 60px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.poker-table{width:100%;background:#0E5E2E;border-radius:18px;padding:20px 14px;box-shadow:0 14px 40px rgba(27,42,74,.25);display:flex;flex-direction:column;align-items:center;gap:16px}
+.poker-community{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;min-height:56px;align-items:center}
+.poker-pot{color:#fff;font-weight:700;font-size:.85rem;background:rgba(0,0,0,.25);padding:5px 14px;border-radius:20px}
+.poker-card{width:38px;height:54px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.poker-card.red{color:#D6293E}
+.poker-card.black{color:#1B2A4A}
+.poker-card.back{background:repeating-linear-gradient(45deg,#1B2A4A,#1B2A4A 4px,#2c3f6b 4px,#2c3f6b 8px);border:2px solid #fff}
+.poker-card.small{width:28px;height:40px;font-size:.74rem;border-radius:4px}
+.poker-seats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:100%}
+.pseat{background:rgba(255,255,255,.94);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:5px;align-items:center;position:relative;border:2px solid transparent}
+.pseat.turn{border-color:#FACC15;box-shadow:0 0 0 3px rgba(250,204,21,.35)}
+.pseat.folded{opacity:.45}
+.pseat.mine{background:#E8F0FE}
+.pseat .ps-name{font-size:.78rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:4px}
+.pseat .ps-tag{font-size:.62rem;font-weight:800;padding:1px 6px;border-radius:8px;background:var(--blue);color:#fff}
+.pseat .ps-tag.sb{background:#0EA5E9}
+.pseat .ps-tag.bb{background:#F97316}
+.pseat .ps-chips{font-size:.72rem;color:var(--muted);font-weight:700}
+.pseat .ps-bet{font-size:.68rem;color:#14532D;font-weight:700;background:#DCFCE7;padding:1px 8px;border-radius:10px}
+.pseat .ps-cards{display:flex;gap:3px}
+.pseat .ps-status{font-size:.66rem;font-weight:700;color:#B91C1C}
+.poker-msg{font-size:.8rem;color:var(--muted);text-align:center;min-height:1.2em;font-weight:600}
+.poker-action-bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;width:100%}
+.poker-action-bar button{padding:10px 18px;border-radius:9px;border:1.5px solid var(--border);background:#fff;font-family:inherit;font-size:.82rem;font-weight:700;color:var(--navy);cursor:pointer;transition:all .15s}
+.poker-action-bar button:hover{border-color:var(--blue);color:var(--blue);background:var(--sky)}
+.poker-action-bar button.fold{border-color:#FCA5A5;color:#B91C1C}
+.poker-action-bar button.fold:hover{background:#FEE2E2}
+.poker-action-bar button.raise{background:var(--blue);border-color:var(--blue);color:#fff}
+.poker-action-bar button.raise:hover{background:#1a56cb}
+.poker-action-bar input[type=range]{width:140px}
+.poker-action-bar .pbet-amt{font-size:.8rem;font-weight:700;color:var(--navy);min-width:56px;text-align:center}
+
 /* ── 同期バー ── */
 .sync-bar{padding:5px 18px;font-size:.72rem;display:flex;align-items:center;gap:6px}
 .sync-bar.saving{background:#E8F0FE;border-bottom:1px solid #B5D4F4;color:#185FA5}
@@ -458,6 +493,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <button class="quick-box" onclick="openMap()"><span class="qi">📍</span><span class="ql-label">土庄町地図</span></button>
       <button class="quick-box" onclick="window._openChat&&window._openChat()"><span class="qi">💬</span><span class="ql-label" id="chatLoginLbl">チャット</span></button>
       <button class="quick-box" onclick="window._openGame&&window._openGame()"><span class="qi">⚫⚪</span><span class="ql-label">オセロ</span></button>
+      <button class="quick-box" onclick="window._openPoker&&window._openPoker()"><span class="qi">🃏</span><span class="ql-label">ポーカー</span></button>
       <button class="quick-box" onclick="openSettings()"><span class="qi">⚙</span><span class="ql-label">設定</span></button>
       <button class="quick-box" onclick="goToMemberSelect()" style="border:2px solid #D1D9E6"><span class="qi">👤</span><span class="ql-label" style="color:#7A8BAA">メンバー変更</span></button>
     </div>
@@ -481,6 +517,7 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <button class="hbtn" onclick="openMap()">📍 地図</button>
       <button class="hbtn" id="chatHbtn" onclick="window._openChat&&window._openChat()">💬 チャット</button>
       <button class="hbtn" onclick="window._openGame&&window._openGame()">⚫⚪ オセロ</button>
+      <button class="hbtn" onclick="window._openPoker&&window._openPoker()">🃏 ポーカー</button>
       <button class="hbtn" onclick="openSettings()">⚙ 設定</button>
       <button class="hbtn" onclick="goToCalendarSelect()">← 戻る</button>
     </div>
@@ -584,6 +621,31 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <div class="othello-board" id="othelloBoard"></div>
       <div class="game-msg" id="gameMsg">&nbsp;</div>
       <div class="game-btns" id="gameBtns"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ゲーム（ポーカー） -->
+<div id="pokerScreen" style="display:none">
+  <header>
+    <div class="h-left">
+      <h1 id="pokerHeaderTitle">🃏 テキサスホールデム</h1>
+      <p id="pokerHeaderSub">対戦ルームを選んでオンライン対戦できます（2〜9人）</p>
+    </div>
+    <button class="hbtn" onclick="window._pokerBack&&window._pokerBack()">← 戻る</button>
+  </header>
+  <div class="poker-wrap">
+
+    <!-- ルーム一覧 -->
+    <div id="pokerRoomList" class="room-list"></div>
+
+    <!-- ルーム内画面 -->
+    <div id="pokerRoomView" style="display:none;width:100%">
+      <div class="poker-table" id="pokerTable"></div>
+      <div class="poker-msg" id="pokerMsg">&nbsp;</div>
+      <div class="poker-action-bar" id="pokerActionBar"></div>
+      <div class="game-btns" id="pokerBtns"></div>
     </div>
 
   </div>
@@ -1501,7 +1563,7 @@ let chatMsgs={},unsubChat=null,chatFrom='login';
 function chatMyName(){return myIndex>=0?(members[myIndex]||`メンバー${myIndex+1}`):'ゲスト'}
 
 function hideAll(){
-  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen','gameScreen'].forEach(id=>{
+  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen','gameScreen','pokerScreen'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
 }
@@ -1946,6 +2008,453 @@ window._closeGame=function(){
     }
   }
 };
+
+// ═══ ポーカー（テキサスホールデム・対戦ルーム制） ═══════════════
+// ※簡易ルール：サイドポットは作らず、参加者の最小チップ数を「賭け上限」とする
+const DB_POKER='poker_rooms';
+const POKER_ROOM_IDS=['proom1','proom2'];
+const POKER_ROOM_LABELS={proom1:'対戦ルーム1',proom2:'対戦ルーム2'};
+const POKER_START_CHIPS=1000, POKER_SB=10, POKER_BB=20, POKER_MAX_SEATS=9, POKER_MIN_SEATS=2;
+const PSUITS=['s','h','d','c'];
+const PRANK_CHAR={14:'A',13:'K',12:'Q',11:'J',10:'10',9:'9',8:'8',7:'7',6:'6',5:'5',4:'4',3:'3',2:'2'};
+const PCAT_NAME=['ハイカード','ワンペア','ツーペア','スリーカード','ストレート','フラッシュ','フルハウス','フォーカード','ストレートフラッシュ'];
+let pokerRooms={}, pokerCurrentRoom=null, pokerFrom='login', unsubPoker=null;
+
+function pkMakeDeck(){
+  const d=[];
+  for(const s of PSUITS)for(let r=2;r<=14;r++)d.push({r,s});
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
+  return d;
+}
+function pkEmptyRoom(){
+  return {seats:[],dealerSeat:-1,sbSeat:-1,bbSeat:-1,phase:'waiting',community:[],pot:0,
+    currentBet:0,betCap:0,actingSeat:-1,lastRaiserSeat:-1,handNum:0,winnerInfo:null,updatedAt:Date.now()};
+}
+function pkNextActiveSeat(seats,from,filterFn){
+  const n=seats.length;
+  if(n===0)return -1;
+  for(let step=1;step<=n;step++){
+    const i=(from+step)%n;
+    if(seats[i]&&filterFn(seats[i]))return i;
+  }
+  return -1;
+}
+function pkCombos5(arr){
+  const res=[],n=arr.length;
+  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let c=b+1;c<n;c++)for(let d=c+1;d<n;d++)for(let e=d+1;e<n;e++)
+    res.push([arr[a],arr[b],arr[c],arr[d],arr[e]]);
+  return res;
+}
+function pkEval5(cards){
+  const ranks=cards.map(c=>c.r).sort((a,b)=>b-a);
+  const suits=cards.map(c=>c.s);
+  const isFlush=suits.every(s=>s===suits[0]);
+  const uniq=[...new Set(ranks)];
+  let isStraight=false, straightHigh=0;
+  if(uniq.length===5){
+    if(uniq[0]-uniq[4]===4){isStraight=true;straightHigh=uniq[0];}
+    else if(uniq[0]===14&&uniq[1]===5&&uniq[2]===4&&uniq[3]===3&&uniq[4]===2){isStraight=true;straightHigh=5;}
+  }
+  const counts={};
+  ranks.forEach(r=>counts[r]=(counts[r]||0)+1);
+  const groups=Object.entries(counts).map(([r,c])=>({r:+r,c})).sort((a,b)=>b.c-a.c||b.r-a.r);
+  if(isStraight&&isFlush)return [8,straightHigh];
+  if(groups[0].c===4)return [7,groups[0].r,groups[1].r];
+  if(groups[0].c===3&&groups[1].c===2)return [6,groups[0].r,groups[1].r];
+  if(isFlush)return [5,...ranks];
+  if(isStraight)return [4,straightHigh];
+  if(groups[0].c===3)return [3,groups[0].r,...groups.slice(1).map(g=>g.r)];
+  if(groups[0].c===2&&groups[1].c===2)return [2,Math.max(groups[0].r,groups[1].r),Math.min(groups[0].r,groups[1].r),groups[2].r];
+  if(groups[0].c===2)return [1,groups[0].r,...groups.slice(1).map(g=>g.r)];
+  return [0,...ranks];
+}
+function pkCompare(a,b){
+  const len=Math.max(a.length,b.length);
+  for(let i=0;i<len;i++){
+    const x=a[i]||0,y=b[i]||0;
+    if(x!==y)return x-y;
+  }
+  return 0;
+}
+function pkBest7(cards7){
+  let best=null;
+  pkCombos5(cards7).forEach(c5=>{
+    const sc=pkEval5(c5);
+    if(!best||pkCompare(sc,best)>0)best=sc;
+  });
+  return best;
+}
+function pkHandDesc(score){
+  const name=PCAT_NAME[score[0]];
+  const top=PRANK_CHAR[score[1]]||'';
+  return name+(top?`（${top}）`:'');
+}
+function pkCardHtml(card,small){
+  if(!card)return `<div class="poker-card${small?' small':''} back"></div>`;
+  const red=(card.s==='h'||card.s==='d');
+  const suitChar={s:'♠',h:'♥',d:'♦',c:'♣'}[card.s];
+  return `<div class="poker-card${small?' small':''} ${red?'red':'black'}">${PRANK_CHAR[card.r]}${suitChar}</div>`;
+}
+
+function pkAfterAction(st){
+  const seats=st.seats;
+  const nonFolded=seats.filter(s=>s&&s.inHand&&!s.folded);
+  if(nonFolded.length===1){
+    const w=nonFolded[0];
+    w.chips+=st.pot;
+    st.winnerInfo={results:[{name:w.name,amount:st.pot,desc:'（他全員フォールド）',isWinner:true}]};
+    st.pot=0; st.phase='showdown'; st.actingSeat=-1;
+    return;
+  }
+  const canAct=seats.filter(s=>s&&s.inHand&&!s.folded&&!s.capped);
+  const streetDone = canAct.length===0 || canAct.every(s=>s.hasActed && s.bet===st.currentBet);
+  if(!streetDone){
+    const nextIdx=pkNextActiveSeat(seats, st.actingSeat, s=>s.inHand&&!s.folded&&!s.capped);
+    st.actingSeat=nextIdx;
+    return;
+  }
+  if(canAct.length<=1){ pkEvaluateShowdown(st); return; }
+  if(st.phase==='preflop')st.phase='flop';
+  else if(st.phase==='flop')st.phase='turn';
+  else if(st.phase==='turn')st.phase='river';
+  else { pkEvaluateShowdown(st); return; }
+  seats.forEach(s=>{if(s&&s.inHand&&!s.folded){s.bet=0;s.hasActed=false;}});
+  st.currentBet=0; st.lastRaiserSeat=-1;
+  const firstIdx=pkNextActiveSeat(seats, st.dealerSeat, s=>s.inHand&&!s.folded&&!s.capped);
+  st.actingSeat=firstIdx;
+  if(st.actingSeat<0)pkAfterAction(st);
+}
+function pkEvaluateShowdown(st){
+  const seats=st.seats;
+  const nonFolded=seats.filter(s=>s&&s.inHand&&!s.folded);
+  const scored=nonFolded.map(s=>({seat:s,score:pkBest7([...s.holeCards,...st.community])}));
+  scored.sort((a,b)=>pkCompare(b.score,a.score));
+  const topScore=scored[0].score;
+  const winners=scored.filter(x=>pkCompare(x.score,topScore)===0);
+  const share=Math.floor(st.pot/winners.length);
+  const remainder=st.pot-share*winners.length;
+  winners.forEach((w,i)=>{ w.seat.chips += share + (i===0?remainder:0); });
+  st.winnerInfo={results:scored.map((x,i)=>({
+    name:x.seat.name,
+    desc:pkHandDesc(x.score),
+    isWinner:winners.includes(x),
+    amount:winners.includes(x)?(share+(winners[0]===x?remainder:0)):0
+  }))};
+  st.pot=0; st.phase='showdown'; st.actingSeat=-1;
+}
+
+function pokerRoomStatus(st){
+  const n=(st&&st.seats?st.seats.filter(s=>s&&!s.left).length:0);
+  if(n===0)return{text:'空室',cls:'empty'};
+  if(n===1)return{text:'対戦準備中',cls:'waiting'};
+  if(!st.phase||st.phase==='waiting')return{text:'対戦準備中',cls:'waiting'};
+  return{text:'対戦中',cls:'playing'};
+}
+function pokerMySeatIdx(st){
+  if(!st||myIndex<0||!st.seats)return -1;
+  return st.seats.findIndex(s=>s&&!s.left&&s.idx===myIndex);
+}
+function pokerRenderRoomList(){
+  const wrap=document.getElementById('pokerRoomList');
+  if(!wrap)return;
+  let html='';
+  POKER_ROOM_IDS.forEach(id=>{
+    const st=pokerRooms[id];
+    const stat=pokerRoomStatus(st);
+    const mySeat=pokerMySeatIdx(st);
+    const n=(st&&st.seats?st.seats.filter(s=>s&&!s.left).length:0);
+    const full=n>=POKER_MAX_SEATS;
+    let btnLabel='入室する',btnDisabled='';
+    if(mySeat>=0)btnLabel='ルームに戻る';
+    else if(full){btnLabel='満室です';btnDisabled='disabled';}
+    const names=(st&&st.seats?st.seats.filter(s=>s&&!s.left).map(s=>esc(s.name)).join('、'):'');
+    html+=`<div class="room-card">
+      <div class="rc-title">${POKER_ROOM_LABELS[id]}</div>
+      <div class="room-badge ${stat.cls}">${stat.text}</div>
+      <div class="rc-players">${n}/${POKER_MAX_SEATS}人${names?'：<b>'+names+'</b>':''}</div>
+      <button class="game-btn primary" ${btnDisabled} onclick="window._pokerJoin('${id}')">${btnLabel}</button>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+window._pokerJoin=async function(roomId){
+  if(myIndex<0){showToast('⚠️ 先にメンバーを選んでください');return}
+  let st=pokerRooms[roomId]?JSON.parse(JSON.stringify(pokerRooms[roomId])):pkEmptyRoom();
+  if(!st.seats)st.seats=[];
+  const mySeat=pokerMySeatIdx(st);
+  if(mySeat>=0){pokerEnterRoom(roomId);return}
+  if(st.seats.filter(s=>s&&!s.left).length>=POKER_MAX_SEATS){showToast('⚠️ このルームは満室です');return}
+  const name=members[myIndex]||`メンバー${myIndex+1}`;
+  const newSeat={idx:myIndex,name,chips:POKER_START_CHIPS,folded:false,inHand:false,capped:false,
+    bet:0,handContrib:0,hasActed:false,left:false,holeCards:null};
+  let placed=false;
+  for(let i=0;i<st.seats.length;i++){
+    if(!st.seats[i]||st.seats[i].left){st.seats[i]=newSeat;placed=true;break;}
+  }
+  if(!placed)st.seats.push(newSeat);
+  st.updatedAt=Date.now();
+  pokerRooms={...pokerRooms,[roomId]:st};
+  pokerEnterRoom(roomId);
+  const ok=await fbSet(DB_POKER+'/'+roomId,st);
+  if(!ok)showToast('❌ 入室の保存に失敗しました');
+};
+function pokerEnterRoom(roomId){
+  pokerCurrentRoom=roomId;
+  document.getElementById('pokerRoomList').style.display='none';
+  document.getElementById('pokerRoomView').style.display='block';
+  document.getElementById('pokerHeaderTitle').textContent='🃏 '+POKER_ROOM_LABELS[roomId];
+  document.getElementById('pokerHeaderSub').textContent='オンライン対戦中';
+  pokerRenderRoomView();
+}
+function pokerShowRoomList(){
+  pokerCurrentRoom=null;
+  document.getElementById('pokerRoomView').style.display='none';
+  document.getElementById('pokerRoomList').style.display='flex';
+  document.getElementById('pokerHeaderTitle').textContent='🃏 テキサスホールデム';
+  document.getElementById('pokerHeaderSub').textContent='対戦ルームを選んでオンライン対戦できます（2〜9人）';
+  pokerRenderRoomList();
+}
+window._pokerBack=function(){
+  if(pokerCurrentRoom){pokerShowRoomList();}
+  else{window._closePoker();}
+};
+
+window._pokerStart=async function(){
+  if(!pokerCurrentRoom)return;
+  let st=JSON.parse(JSON.stringify(pokerRooms[pokerCurrentRoom]));
+  const dealerMemberIdx=(st.dealerSeat>=0&&st.seats[st.dealerSeat])?st.seats[st.dealerSeat].idx:null;
+  st.seats=st.seats.filter(s=>s&&!s.left);
+  st.dealerSeat=dealerMemberIdx!=null?st.seats.findIndex(s=>s.idx===dealerMemberIdx):-1;
+  const eligible=st.seats.filter(s=>s.chips>0);
+  if(eligible.length<POKER_MIN_SEATS){showToast('⚠️ 開始には2人以上必要です');return}
+  st.seats.forEach(s=>{
+    s.folded=s.chips<=0; s.inHand=s.chips>0; s.capped=s.chips<=0;
+    s.bet=0; s.handContrib=0; s.hasActed=false; s.holeCards=null;
+  });
+  const deck=pkMakeDeck();
+  const inHandIdxs=st.seats.map((s,i)=>s.inHand?i:-1).filter(i=>i>=0);
+  inHandIdxs.forEach(i=>{ st.seats[i].holeCards=[deck.pop(),deck.pop()]; });
+  st.community=[deck.pop(),deck.pop(),deck.pop(),deck.pop(),deck.pop()];
+  st.betCap=Math.min(...inHandIdxs.map(i=>st.seats[i].chips));
+  let dealer=pkNextActiveSeat(st.seats, st.dealerSeat<0?-1:st.dealerSeat, s=>s.inHand);
+  if(dealer<0)dealer=inHandIdxs[0];
+  st.dealerSeat=dealer;
+  let sbSeat,bbSeat,firstToAct;
+  if(inHandIdxs.length===2){
+    sbSeat=dealer;
+    bbSeat=pkNextActiveSeat(st.seats,dealer,s=>s.inHand);
+    firstToAct=dealer;
+  } else {
+    sbSeat=pkNextActiveSeat(st.seats,dealer,s=>s.inHand);
+    bbSeat=pkNextActiveSeat(st.seats,sbSeat,s=>s.inHand);
+    firstToAct=pkNextActiveSeat(st.seats,bbSeat,s=>s.inHand);
+  }
+  const sb=Math.min(POKER_SB, st.betCap), bb=Math.min(POKER_BB, st.betCap);
+  st.seats[sbSeat].chips-=sb; st.seats[sbSeat].bet=sb; st.seats[sbSeat].handContrib=sb;
+  st.seats[bbSeat].chips-=bb; st.seats[bbSeat].bet=bb; st.seats[bbSeat].handContrib=bb;
+  if(st.seats[sbSeat].handContrib>=st.betCap)st.seats[sbSeat].capped=true;
+  if(st.seats[bbSeat].handContrib>=st.betCap)st.seats[bbSeat].capped=true;
+  st.pot=sb+bb; st.currentBet=bb; st.phase='preflop';
+  st.actingSeat=(firstToAct>=0&&st.seats[firstToAct]&&!st.seats[firstToAct].capped)?firstToAct:pkNextActiveSeat(st.seats,bbSeat,s=>s.inHand&&!s.capped);
+  st.lastRaiserSeat=bbSeat; st.winnerInfo=null;
+  st.handNum=(st.handNum||0)+1; st.sbSeat=sbSeat; st.bbSeat=bbSeat;
+  if(st.actingSeat<0)pkAfterAction(st);
+  st.updatedAt=Date.now();
+  pokerRooms={...pokerRooms,[pokerCurrentRoom]:st};
+  pokerRenderRoomView();
+  await fbSet(DB_POKER+'/'+pokerCurrentRoom, st);
+};
+window._pokerAction=async function(type,amount){
+  if(!pokerCurrentRoom)return;
+  let st=JSON.parse(JSON.stringify(pokerRooms[pokerCurrentRoom]));
+  if(!['preflop','flop','turn','river'].includes(st.phase))return;
+  const mySeatIdx=pokerMySeatIdx(st);
+  if(mySeatIdx<0||mySeatIdx!==st.actingSeat)return;
+  const seat=st.seats[mySeatIdx];
+  if(type==='fold'){
+    seat.folded=true; seat.hasActed=true;
+  } else if(type==='check'){
+    if(seat.bet!==st.currentBet)return;
+    seat.hasActed=true;
+  } else if(type==='call'){
+    const need=st.currentBet-seat.bet;
+    const room=st.betCap-seat.handContrib;
+    const pay=Math.max(0,Math.min(need,room,seat.chips));
+    seat.chips-=pay; seat.bet+=pay; seat.handContrib+=pay; st.pot+=pay;
+    if(seat.handContrib>=st.betCap||seat.chips===0)seat.capped=true;
+    seat.hasActed=true;
+  } else if(type==='raise'){
+    let target=Math.min(amount,st.betCap);
+    target=Math.max(target,seat.handContrib);
+    const delta=target-seat.handContrib;
+    if(delta<=0||delta>seat.chips)return;
+    seat.chips-=delta; seat.handContrib+=delta; seat.bet+=delta; st.pot+=delta;
+    st.currentBet=seat.bet; st.lastRaiserSeat=mySeatIdx;
+    if(seat.handContrib>=st.betCap)seat.capped=true;
+    seat.hasActed=true;
+    st.seats.forEach((s,i)=>{ if(i!==mySeatIdx&&s&&s.inHand&&!s.folded&&!s.capped)s.hasActed=false; });
+  } else if(type==='allin'){
+    const target=st.betCap;
+    const delta=target-seat.handContrib;
+    if(delta<=0)return;
+    const pay=Math.min(delta,seat.chips);
+    seat.chips-=pay; seat.handContrib+=pay; seat.bet+=pay; st.pot+=pay; seat.capped=true;
+    if(seat.bet>st.currentBet){
+      st.currentBet=seat.bet; st.lastRaiserSeat=mySeatIdx;
+      st.seats.forEach((s,i)=>{ if(i!==mySeatIdx&&s&&s.inHand&&!s.folded&&!s.capped)s.hasActed=false; });
+    }
+    seat.hasActed=true;
+  } else return;
+  pkAfterAction(st);
+  st.updatedAt=Date.now();
+  pokerRooms={...pokerRooms,[pokerCurrentRoom]:st};
+  pokerRenderRoomView();
+  await fbSet(DB_POKER+'/'+pokerCurrentRoom, st);
+};
+window._pokerLeave=async function(isResign){
+  if(!pokerCurrentRoom){pokerShowRoomList();return}
+  const roomId=pokerCurrentRoom;
+  let st=pokerRooms[roomId]?JSON.parse(JSON.stringify(pokerRooms[roomId])):null;
+  if(!st){pokerShowRoomList();return}
+  const seatIdx=pokerMySeatIdx(st);
+  const inActiveHand=['preflop','flop','turn','river'].includes(st.phase);
+  if(seatIdx>=0){
+    const seat=st.seats[seatIdx];
+    if(isResign&&inActiveHand&&seat.inHand&&!seat.folded){
+      if(!confirm('途中退室すると、このハンドは負け（フォールド）になります。よろしいですか？'))return;
+      seat.folded=true; seat.hasActed=true; seat.left=true;
+      pkAfterAction(st);
+    } else {
+      seat.left=true;
+    }
+    st.updatedAt=Date.now();
+    pokerRooms={...pokerRooms,[roomId]:st};
+    await fbSet(DB_POKER+'/'+roomId, st);
+  }
+  pokerShowRoomList();
+};
+
+function pokerCommunityCount(phase){
+  return {waiting:0,preflop:0,flop:3,turn:4,river:5,showdown:5}[phase]||0;
+}
+function pokerSeatTag(st,i){
+  if(i===st.dealerSeat)return ' <span class="ps-tag">D</span>';
+  if(i===st.sbSeat)return ' <span class="ps-tag sb">SB</span>';
+  if(i===st.bbSeat)return ' <span class="ps-tag bb">BB</span>';
+  return '';
+}
+function pokerRenderRoomView(){
+  if(!pokerCurrentRoom)return;
+  const st=pokerRooms[pokerCurrentRoom];
+  const tableEl=document.getElementById('pokerTable');
+  const msgEl=document.getElementById('pokerMsg');
+  const actionEl=document.getElementById('pokerActionBar');
+  const btnsEl=document.getElementById('pokerBtns');
+  if(!st){pokerShowRoomList();return}
+  const mySeatIdx=pokerMySeatIdx(st);
+  const seats=st.seats||[];
+  const ccount=pokerCommunityCount(st.phase);
+  let communityHtml='';
+  for(let i=0;i<5;i++)communityHtml+=pkCardHtml(i<ccount?st.community[i]:null,false);
+
+  let seatsHtml='<div class="poker-seats">';
+  seats.forEach((s,i)=>{
+    if(!s)return;
+    const isMe=(i===mySeatIdx);
+    const isTurn=(i===st.actingSeat)&&['preflop','flop','turn','river'].includes(st.phase);
+    let cardsHtml='';
+    if(s.inHand&&s.holeCards){
+      const showCards=isMe||(st.phase==='showdown'&&!s.folded);
+      cardsHtml=`<div class="ps-cards">${showCards?pkCardHtml(s.holeCards[0],true)+pkCardHtml(s.holeCards[1],true):pkCardHtml(null,true)+pkCardHtml(null,true)}</div>`;
+    }
+    let statusHtml='';
+    if(s.folded)statusHtml='<div class="ps-status">フォールド</div>';
+    else if(s.capped&&['preflop','flop','turn','river'].includes(st.phase))statusHtml='<div class="ps-status" style="color:#0EA5E9">オールイン</div>';
+    if(s.chips<=0&&st.phase==='waiting')statusHtml='<div class="ps-status">チップ切れ</div>';
+    seatsHtml+=`<div class="pseat${isTurn?' turn':''}${s.folded?' folded':''}${isMe?' mine':''}">
+      <div class="ps-name">${esc(s.name)}${pokerSeatTag(st,i)}</div>
+      ${cardsHtml}
+      <div class="ps-chips">💰 ${s.chips}</div>
+      ${s.bet>0?`<div class="ps-bet">BET ${s.bet}</div>`:''}
+      ${statusHtml}
+    </div>`;
+  });
+  seatsHtml+='</div>';
+  tableEl.innerHTML=`<div class="poker-pot">POT: ${st.pot||0}</div>
+    <div class="poker-community">${communityHtml}</div>
+    ${seatsHtml}`;
+
+  if(st.phase==='waiting'){
+    const n=seats.filter(s=>s&&!s.left).length;
+    msgEl.textContent=n>=2?'「対戦開始」を押すと配牌されます':'あと'+(2-n)+'人の参加をお待ちください';
+    actionEl.innerHTML='';
+    btnsEl.innerHTML=(n>=2?`<button class="game-btn primary" onclick="window._pokerStart()">▶ 対戦開始</button>`:'')
+      +`<button class="game-btn" onclick="window._pokerLeave(false)">🚪 退室する</button>`;
+  } else if(st.phase==='showdown'){
+    const info=st.winnerInfo;
+    let resHtml='';
+    if(info&&info.results){
+      resHtml=info.results.map(r=>`${r.isWinner?'🏆 ':''}${esc(r.name)}：${r.desc||''}${r.amount>0?` → +${r.amount}`:''}`).join('<br>');
+    }
+    msgEl.innerHTML='ハンド終了<br>'+resHtml;
+    actionEl.innerHTML='';
+    btnsEl.innerHTML=`<button class="game-btn primary" onclick="window._pokerStart()">▶ 次のハンドへ</button>
+      <button class="game-btn" onclick="window._pokerLeave(false)">🚪 退室する</button>`;
+  } else {
+    const phaseLabel={preflop:'プリフロップ',flop:'フロップ',turn:'ターン',river:'リバー'}[st.phase]||'';
+    const actingName=(st.actingSeat>=0&&seats[st.actingSeat])?seats[st.actingSeat].name:'';
+    msgEl.textContent=`${phaseLabel} - ${actingName}さんの番です`;
+    btnsEl.innerHTML=`<button class="game-btn" onclick="window._pokerLeave(true)">🚪 途中退室する（このハンドは負けになります）</button>`;
+    if(mySeatIdx>=0&&mySeatIdx===st.actingSeat){
+      const seat=seats[mySeatIdx];
+      const toCall=st.currentBet-seat.bet;
+      const maxRaise=st.betCap-seat.handContrib;
+      let html=`<button class="fold" onclick="window._pokerAction('fold')">フォールド</button>`;
+      html+= toCall<=0
+        ? `<button onclick="window._pokerAction('check')">チェック</button>`
+        : `<button onclick="window._pokerAction('call')">コール（${toCall}）</button>`;
+      if(maxRaise>0){
+        const minTo=Math.min(st.betCap, st.currentBet>0?st.currentBet*2:POKER_BB);
+        html+=`<input type="range" id="pkRaiseRange" min="${minTo}" max="${st.betCap}" value="${minTo}" oninput="document.getElementById('pkRaiseAmt').textContent=this.value">
+          <span class="pbet-amt" id="pkRaiseAmt">${minTo}</span>
+          <button class="raise" onclick="window._pokerAction('raise', parseInt(document.getElementById('pkRaiseRange').value))">${toCall<=0?'ベット':'レイズ'}</button>
+          <button class="raise" onclick="window._pokerAction('allin')">オールイン</button>`;
+      }
+      actionEl.innerHTML=html;
+    } else {
+      actionEl.innerHTML='';
+    }
+  }
+}
+
+window._openPoker=function(){
+  pokerFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
+  hideAll();
+  document.getElementById('pokerScreen').style.display='block';
+  pokerShowRoomList();
+  if(!unsubPoker){
+    unsubPoker=fbListen(DB_POKER,val=>{
+      pokerRooms=val||{};
+      if(pokerCurrentRoom)pokerRenderRoomView();
+      else pokerRenderRoomList();
+    });
+  } else {
+    if(pokerCurrentRoom)pokerRenderRoomView();else pokerRenderRoomList();
+  }
+};
+window._closePoker=function(){
+  document.getElementById('pokerScreen').style.display='none';
+  if(pokerFrom==='app'){document.getElementById('appScreen').style.display='block';}
+  else{
+    if(myIndex>=0){
+      renderLoginScreen();
+      document.getElementById('loginScreen').style.display='flex';
+    } else {
+      showMemberSelectScreen();
+    }
+  }
+};
+
 // ─── 初期化 ───────────────────────────────────────────────
   try{
     await initData();
