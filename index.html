@@ -144,6 +144,15 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .game-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
 .game-btn.primary:hover{background:#1a56cb}
 .game-msg{font-size:.78rem;color:var(--muted);text-align:center;min-height:1.2em}
+.game-seats{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+.gseat{flex:1;min-width:150px;max-width:220px;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center}
+.gseat.black-seat{border-top:4px solid #1B2A4A}
+.gseat.white-seat{border-top:4px solid #B0BDD4}
+.gseat .gs-label{font-size:.68rem;color:var(--muted);font-weight:600;margin-bottom:3px}
+.gseat .gs-name{font-size:.85rem;font-weight:700;color:var(--navy);min-height:1.3em}
+.gseat button{margin-top:6px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--blue);background:var(--sky);color:var(--blue);font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer}
+.gseat button:hover{background:var(--blue);color:#fff}
+.gseat.mine{box-shadow:0 0 0 2px var(--green) inset}
 
 /* ── 同期バー ── */
 .sync-bar{padding:5px 18px;font-size:.72rem;display:flex;align-items:center;gap:6px}
@@ -554,20 +563,21 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
   <header>
     <div class="h-left">
       <h1>⚫⚪ オセロ</h1>
-      <p>2人で交互にタップして対戦（同じ画面でプレイ）</p>
+      <p>離れた場所同士でオンライン対戦できます</p>
     </div>
     <button class="hbtn" onclick="window._closeGame&&window._closeGame()">← 戻る</button>
   </header>
   <div class="game-wrap">
+    <div class="game-seats" id="gameSeats"></div>
     <div class="game-status">
       <div class="game-score"><span class="gp black"></span><span id="gameScoreBlack">2</span></div>
-      <div class="game-turn" id="gameTurnLbl">⚫ あなたの番</div>
+      <div class="game-turn" id="gameTurnLbl">対局を準備中…</div>
       <div class="game-score"><span class="gp white"></span><span id="gameScoreWhite">2</span></div>
     </div>
     <div class="othello-board" id="othelloBoard"></div>
     <div class="game-msg" id="gameMsg">&nbsp;</div>
     <div class="game-btns">
-      <button class="game-btn primary" onclick="window._gameReset&&window._gameReset()">🔄 はじめから</button>
+      <button class="game-btn primary" onclick="window._gameNew&&window._gameNew()">🔄 新しい対局を始める</button>
     </div>
   </div>
 </div>
@@ -1607,108 +1617,170 @@ async function chatPurge(){
   }
 }
 
-// ═══ オセロ（ローカル対戦） ═══════════════════════════════════
+// ═══ オセロ（オンライン共有対戦） ═══════════════════════════════
+const DB_GAME='othello_game';
 const OTH_DIRS=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-let othBoard=null, othTurn=1, othFrom='login'; // 1=黒,2=白
-function othInitBoard(){
-  const b=Array.from({length:8},()=>Array(8).fill(0));
-  b[3][3]=2;b[3][4]=1;b[4][3]=1;b[4][4]=2;
+let othState=null, othFrom='login', unsubGame=null;
+function othIdx(r,c){return r*8+c}
+function othInitFlat(){
+  const b=Array(64).fill(0);
+  b[othIdx(3,3)]=2;b[othIdx(3,4)]=1;b[othIdx(4,3)]=1;b[othIdx(4,4)]=2;
   return b;
 }
-function othValidMoves(board,player){
-  const moves=[];
-  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
-    if(board[r][c]!==0)continue;
-    if(othFlipsFor(board,r,c,player).length>0)moves.push([r,c]);
-  }
-  return moves;
+function othNewState(){
+  return {board:othInitFlat(),turn:1,black:null,white:null,blackName:'',whiteName:'',status:'playing',winner:null,updatedAt:Date.now()};
 }
 function othFlipsFor(board,r,c,player){
   const opp=player===1?2:1;
   let flips=[];
   for(const [dr,dc] of OTH_DIRS){
     let rr=r+dr,cc=c+dc,line=[];
-    while(rr>=0&&rr<8&&cc>=0&&cc<8&&board[rr][cc]===opp){
-      line.push([rr,cc]);rr+=dr;cc+=dc;
+    while(rr>=0&&rr<8&&cc>=0&&cc<8&&board[othIdx(rr,cc)]===opp){
+      line.push(othIdx(rr,cc));rr+=dr;cc+=dc;
     }
-    if(line.length>0&&rr>=0&&rr<8&&cc>=0&&cc<8&&board[rr][cc]===player){
+    if(line.length>0&&rr>=0&&rr<8&&cc>=0&&cc<8&&board[othIdx(rr,cc)]===player){
       flips=flips.concat(line);
     }
   }
   return flips;
 }
+function othValidMoves(board,player){
+  const moves=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    if(board[othIdx(r,c)]!==0)continue;
+    if(othFlipsFor(board,r,c,player).length>0)moves.push(othIdx(r,c));
+  }
+  return moves;
+}
 function othScore(board){
   let b=0,w=0;
-  for(let r=0;r<8;r++)for(let c=0;c<8;c++){if(board[r][c]===1)b++;else if(board[r][c]===2)w++;}
+  for(let i=0;i<64;i++){if(board[i]===1)b++;else if(board[i]===2)w++;}
   return {black:b,white:w};
 }
-function othRender(){
-  const wrap=document.getElementById('othelloBoard');
-  if(!wrap||!othBoard)return;
-  const moves=othValidMoves(othBoard,othTurn);
-  const moveSet=new Set(moves.map(m=>m[0]+'_'+m[1]));
-  let html='';
-  for(let r=0;r<8;r++){
-    for(let c=0;c<8;c++){
-      const v=othBoard[r][c];
-      const key=r+'_'+c;
-      let inner='';
-      if(v===1)inner='<div class="disc black"></div>';
-      else if(v===2)inner='<div class="disc white"></div>';
-      else if(moveSet.has(key))inner='<div class="hint"></div>';
-      html+=`<div class="oc" onclick="window._gamePlace(${r},${c})">${inner}</div>`;
+function othMyColor(st){
+  if(!st||myIndex<0)return null;
+  if(st.black===myIndex)return 1;
+  if(st.white===myIndex)return 2;
+  return null;
+}
+window._gameNew=async function(){
+  if(myIndex<0){showToast('⚠️ 先にメンバーを選んでください');return}
+  await fbSet(DB_GAME,othNewState());
+};
+window._gameSeat=async function(color){
+  if(myIndex<0){showToast('⚠️ 先にメンバーを選んでください');return}
+  let st=othState?{...othState,board:[...othState.board]}:othNewState();
+  const name=members[myIndex]||`メンバー${myIndex+1}`;
+  if(color==='black'){
+    if(st.black!=null&&st.black!==myIndex){showToast('⚫ 黒はすでに埋まっています');return}
+    st.black=myIndex;st.blackName=name;
+  } else {
+    if(st.white!=null&&st.white!==myIndex){showToast('⚪ 白はすでに埋まっています');return}
+    st.white=myIndex;st.whiteName=name;
+  }
+  st.updatedAt=Date.now();
+  await fbSet(DB_GAME,st);
+};
+window._gamePlace=async function(r,c){
+  const st=othState;
+  if(!st||st.status!=='playing')return;
+  const my=othMyColor(st);
+  if(my==null||my!==st.turn)return;
+  const board=[...st.board];
+  const flips=othFlipsFor(board,r,c,st.turn);
+  if(board[othIdx(r,c)]!==0||flips.length===0)return;
+  board[othIdx(r,c)]=st.turn;
+  flips.forEach(i=>{board[i]=st.turn});
+  let nextTurn=st.turn===1?2:1;
+  let status='playing',winner=null,msgPass=false;
+  if(othValidMoves(board,nextTurn).length===0){
+    if(othValidMoves(board,st.turn).length===0){
+      const sc=othScore(board);
+      status='finished';
+      winner=sc.black>sc.white?'black':(sc.white>sc.black?'white':'draw');
+    } else {
+      msgPass=true; // 次の人はパス、手番据え置き
+      nextTurn=st.turn;
     }
   }
-  wrap.innerHTML=html;
-  const sc=othScore(othBoard);
+  const newSt={...st,board,turn:nextTurn,status,winner,updatedAt:Date.now(),lastPass:msgPass};
+  await fbSet(DB_GAME,newSt);
+};
+function othSeatsHtml(st){
+  const myColor=othMyColor(st);
+  const blackBtn=(st.black==null)?`<button onclick="window._gameSeat('black')">⚫として参加</button>`
+    :`<div class="gs-name">⚫ ${esc(st.blackName||'')}</div>`;
+  const whiteBtn=(st.white==null)?`<button onclick="window._gameSeat('white')">⚪として参加</button>`
+    :`<div class="gs-name">⚪ ${esc(st.whiteName||'')}</div>`;
+  return `
+    <div class="gseat black-seat${myColor===1?' mine':''}"><div class="gs-label">先手・黒</div>${blackBtn}</div>
+    <div class="gseat white-seat${myColor===2?' mine':''}"><div class="gs-label">後手・白</div>${whiteBtn}</div>`;
+}
+function othRender(){
+  const st=othState;
+  const seatsEl=document.getElementById('gameSeats');
+  const boardEl=document.getElementById('othelloBoard');
+  const lbl=document.getElementById('gameTurnLbl');
+  const msg=document.getElementById('gameMsg');
+  if(!st){
+    seatsEl.innerHTML='';
+    boardEl.innerHTML='';
+    lbl.textContent='まだ対局がありません';
+    lbl.className='game-turn';
+    msg.textContent='「新しい対局を始める」を押して対局を作成し、もう一人を誘いましょう';
+    document.getElementById('gameScoreBlack').textContent='-';
+    document.getElementById('gameScoreWhite').textContent='-';
+    return;
+  }
+  seatsEl.innerHTML=othSeatsHtml(st);
+  const sc=othScore(st.board);
   document.getElementById('gameScoreBlack').textContent=sc.black;
   document.getElementById('gameScoreWhite').textContent=sc.white;
 
-  const lbl=document.getElementById('gameTurnLbl');
-  const msg=document.getElementById('gameMsg');
-  if(moves.length===0){
-    const oppMoves=othValidMoves(othBoard,othTurn===1?2:1);
-    if(oppMoves.length===0){
-      let result;
-      if(sc.black>sc.white)result='⚫ 黒の勝ち！';
-      else if(sc.white>sc.black)result='⚪ 白の勝ち！';
-      else result='引き分け！';
-      lbl.textContent='🏁 '+result;
-      lbl.className='game-turn win';
-      msg.textContent='「はじめから」でもう一度プレイできます';
-    } else {
-      msg.textContent=(othTurn===1?'⚫ 黒':'⚪ 白')+'は置ける場所がないためパスします';
-      othTurn=othTurn===1?2:1;
-      setTimeout(othRender,900);
-      lbl.textContent=(othTurn===1?'⚫ 黒の番':'⚪ 白の番');
-      lbl.className='game-turn';
+  const myColor=othMyColor(st);
+  const moves=(st.status==='playing')?othValidMoves(st.board,st.turn):[];
+  const moveSet=new Set(moves);
+  const canPlay=st.status==='playing'&&myColor===st.turn;
+
+  let html='';
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const i=othIdx(r,c);
+      const v=st.board[i];
+      let inner='';
+      if(v===1)inner='<div class="disc black"></div>';
+      else if(v===2)inner='<div class="disc white"></div>';
+      else if(canPlay&&moveSet.has(i))inner='<div class="hint"></div>';
+      const click=(canPlay&&moveSet.has(i))?`onclick="window._gamePlace(${r},${c})"`:'';
+      html+=`<div class="oc" ${click}>${inner}</div>`;
     }
-  } else {
-    lbl.textContent=(othTurn===1?'⚫ 黒の番':'⚪ 白の番');
+  }
+  boardEl.innerHTML=html;
+
+  if(st.status==='finished'){
+    let result=st.winner==='black'?'⚫ 黒の勝ち！':st.winner==='white'?'⚪ 白の勝ち！':'引き分け！';
+    lbl.textContent='🏁 '+result;
+    lbl.className='game-turn win';
+    msg.textContent='「新しい対局を始める」でもう一度プレイできます';
+  } else if(st.black==null||st.white==null){
+    lbl.textContent='👤 対戦相手を待っています…';
     lbl.className='game-turn';
-    msg.textContent='';
+    msg.textContent='黒・白それぞれの席に参加すると対局がスタートします';
+  } else {
+    lbl.textContent=(st.turn===1?'⚫ 黒の番':'⚪ 白の番')+(myColor===st.turn?'（あなたの番です）':'');
+    lbl.className='game-turn';
+    msg.textContent=st.lastPass?((st.turn===1?'⚪ 白':'⚫ 黒')+'は置ける場所がなかったためパスしました'):(myColor==null?'観戦中です':'');
   }
 }
-window._gamePlace=function(r,c){
-  if(!othBoard)return;
-  const flips=othFlipsFor(othBoard,r,c,othTurn);
-  if(othBoard[r][c]!==0||flips.length===0)return;
-  othBoard[r][c]=othTurn;
-  flips.forEach(([fr,fc])=>{othBoard[fr][fc]=othTurn});
-  othTurn=othTurn===1?2:1;
-  othRender();
-};
-window._gameReset=function(){
-  othBoard=othInitBoard();
-  othTurn=1;
-  othRender();
-};
 window._openGame=function(){
   othFrom=document.getElementById('appScreen').style.display==='block'?'app':'login';
   hideAll();
   document.getElementById('gameScreen').style.display='block';
-  if(!othBoard)othBoard=othInitBoard();
-  othRender();
+  if(!unsubGame){
+    unsubGame=fbListen(DB_GAME,val=>{othState=val;othRender();});
+  } else {
+    othRender();
+  }
 };
 window._closeGame=function(){
   document.getElementById('gameScreen').style.display='none';
