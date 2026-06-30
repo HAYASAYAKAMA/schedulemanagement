@@ -416,25 +416,6 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
   <p>カレンダーを読み込み中...</p>
 </div>
 
-<!-- Firebase未設定時の設定画面 -->
-<div id="setupScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#1B2A4A 0%,#2D6BE4 100%)">
-  <div class="setup-box">
-    <h1>🔧 Firebase設定</h1>
-    <p>初回のみ、FirebaseのプロジェクトIDとAPIキーを入力してください。<br>設定後はこの画面は表示されません。</p>
-    <input class="setup-inp" id="inp-projectId" placeholder="プロジェクトID（例: my-calendar-12345）" autocomplete="off">
-    <input class="setup-inp" id="inp-apiKey" placeholder="APIキー（例: AIzaSy...）" autocomplete="off">
-    <input class="setup-inp" id="inp-appId" placeholder="アプリID（例: 1:123456789:web:abc...）" autocomplete="off">
-    <input class="setup-inp" id="inp-password" type="password" placeholder="アクセスパスワード（省略可）" autocomplete="new-password">
-    <button class="setup-btn" onclick="saveFirebaseConfig()">💾 設定を保存して開始</button>
-    <div class="setup-note">
-      <strong>設定値の確認場所：</strong><br>
-      Firebase Console → プロジェクトの設定 → マイアプリ → Firebase SDK設定<br>
-      「firebaseConfig」の中の値をコピーしてください。<br><br>
-      <strong>パスワード：</strong>設定するとアクセス時にパスワード入力が必要になります。後から変更するには「⚙ 設定」から行えます。
-    </div>
-  </div>
-</div>
-
 <!-- パスワード認証 -->
 <div id="passwordScreen">
   <div class="pw-box">
@@ -675,43 +656,17 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, child } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-// ═══ Firebase設定の読み込み ═══════════════════════════════════
-function getFirebaseConfig() {
-  try {
-    const raw = localStorage.getItem('cal_firebase_config');
-    if (raw) return JSON.parse(raw);
-  } catch(e){}
-  return null;
-}
-function saveFirebaseConfig() {
-  const projectId = document.getElementById('inp-projectId').value.trim();
-  const apiKey = document.getElementById('inp-apiKey').value.trim();
-  const appId = document.getElementById('inp-appId').value.trim();
-  const password = document.getElementById('inp-password').value.trim();
-  if (!projectId || !apiKey || !appId) { alert('プロジェクトID・APIキー・アプリIDは必須です'); return; }
-  const cfg = {
-    apiKey,
-    authDomain: `${projectId}.firebaseapp.com`,
-    databaseURL: `https://${projectId}-default-rtdb.firebaseio.com`,
-    projectId,
-    storageBucket: `${projectId}.appspot.com`,
-    appId
-  };
-  localStorage.setItem('cal_firebase_config', JSON.stringify(cfg));
-  if (password) localStorage.setItem('cal_pw_verified', '');
-  else localStorage.setItem('cal_pw_verified', 'nopw');
-  location.reload();
-}
-window.saveFirebaseConfig = saveFirebaseConfig;
+// ═══ Firebase設定（固定埋め込み）═══════════════════════════════
+const fbConfig = {
+  apiKey: "AIzaSyCZLWATdimsfygT2z0y15q3ZEF1RwI3oWw",
+  authDomain: "schedulemanagement-32904.firebaseapp.com",
+  databaseURL: "https://schedulemanagement-32904-default-rtdb.firebaseio.com",
+  projectId: "schedulemanagement-32904",
+  storageBucket: "schedulemanagement-32904.appspot.com",
+  appId: "1:630989878288:web:cbedc72e9fbd3295a50695"
+};
 
-const fbConfig = getFirebaseConfig();
-if (!fbConfig) {
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('setupScreen').style.display = 'flex';
-  // 以降の処理はしない
-} else {
-  startApp(fbConfig);
-}
+startApp(fbConfig);
 
 async function startApp(fbConfig) {
   let app, db;
@@ -720,8 +675,8 @@ async function startApp(fbConfig) {
     db = getDatabase(app);
   } catch(e) {
     document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('setupScreen').style.display = 'flex';
-    showToast('❌ Firebase接続に失敗しました。設定を確認してください。');
+    console.error(e);
+    alert('❌ Firebase接続に失敗しました。');
     return;
   }
 
@@ -2002,7 +1957,6 @@ window._closeGame=function(){
     }
   }catch(e){
     document.getElementById('loadingScreen').style.display='none';
-    document.getElementById('setupScreen').style.display='flex';
     console.error(e);
   }
 } // end startApp
