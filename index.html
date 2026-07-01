@@ -184,6 +184,33 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .janken-choices button:hover{border-color:var(--blue);background:var(--sky);transform:translateY(-2px)}
 .janken-choices button:disabled{opacity:.4;cursor:default;transform:none}
 
+/* ── チンチロ ── */
+#chinScreen{display:none}
+.chin-wrap{max-width:900px;margin:0 auto;padding:18px 14px 60px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.chin-table{width:100%;background:#1B2A4A;border-radius:18px;padding:20px 14px;box-shadow:0 14px 40px rgba(27,42,74,.3);display:flex;flex-direction:column;align-items:center;gap:14px}
+.chin-phase-label{color:rgba(255,255,255,.7);font-size:.78rem;font-weight:700;letter-spacing:.08em}
+.chin-bet-info{color:rgba(255,255,255,.55);font-size:.74rem;text-align:center}
+.chin-seats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;width:100%}
+.chin-pcard{background:rgba(255,255,255,.92);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;align-items:center;gap:5px;border:2px solid transparent;text-align:center}
+.chin-pcard.banker{border-color:#FACC15;background:#FEFCE8}
+.chin-pcard.current{border-color:#34D399;box-shadow:0 0 0 3px rgba(52,211,153,.3)}
+.chin-pcard.mine{background:#E8F0FE}
+.chin-pcard.win{border-color:#22C55E;background:#DCFCE7}
+.chin-pcard.loss{border-color:#EF4444;background:#FEE2E2}
+.chin-pname{font-size:.8rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:center}
+.chin-tag{font-size:.6rem;font-weight:800;padding:1px 6px;border-radius:8px;background:var(--blue);color:#fff;white-space:nowrap}
+.chin-tag.rolling{background:#10B981}
+.chin-dice{font-size:1.5rem;letter-spacing:4px;line-height:1}
+.chin-dice-empty{font-size:1rem;color:#9CA3AF;letter-spacing:4px}
+.chin-result-badge{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:12px;background:#E0E7FF;color:#3730A3}
+.chin-result-badge.good{background:#DCFCE7;color:#14532D}
+.chin-result-badge.bad{background:#FEE2E2;color:#991B1B}
+.chin-result-text{font-size:.74rem;font-weight:700;color:var(--navy)}
+.chin-rolls-left{font-size:.66rem;color:#6B7280}
+.chin-pchips{font-size:.72rem;color:var(--muted);font-weight:700}
+.chin-msg{font-size:.82rem;color:var(--muted);text-align:center;font-weight:600;min-height:1.2em}
+.chin-action-bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+
 /* ── ポーカー ── */
 #pokerScreen{display:none}
 .poker-wrap{max-width:920px;margin:0 auto;padding:18px 14px 60px;display:flex;flex-direction:column;align-items:center;gap:14px}
@@ -630,6 +657,14 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       </div>
       <span class="tb-arrow">›</span>
     </button>
+    <button class="toybox-card" onclick="window._openChin&&window._openChin()">
+      <span class="tb-icon">🎲</span>
+      <div class="tb-info">
+        <div class="tb-title">チンチロ</div>
+        <div class="tb-desc">2〜10人で対戦・対戦ルーム制</div>
+      </div>
+      <span class="tb-arrow">›</span>
+    </button>
   </div>
 </div>
 
@@ -686,6 +721,26 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <div class="game-btns" id="pokerBtns"></div>
     </div>
 
+  </div>
+</div>
+
+<!-- ゲーム（チンチロ） -->
+<div id="chinScreen" style="display:none">
+  <header>
+    <div class="h-left">
+      <h1 id="chinHeaderTitle">🎲 チンチロ</h1>
+      <p id="chinHeaderSub">対戦ルームを選んでオンライン対戦できます（2〜10人）</p>
+    </div>
+    <button class="hbtn" onclick="window._chinBack&&window._chinBack()">← 戻る</button>
+  </header>
+  <div class="chin-wrap">
+    <div id="chinRoomList" class="room-list"></div>
+    <div id="chinRoomView" style="display:none;width:100%">
+      <div class="chin-table" id="chinTable"></div>
+      <div class="chin-msg" id="chinMsg">&nbsp;</div>
+      <div class="chin-action-bar" id="chinActionBar"></div>
+      <div class="game-btns" id="chinBtns"></div>
+    </div>
   </div>
 </div>
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
@@ -1601,7 +1656,7 @@ let chatMsgs={},unsubChat=null,chatFrom='login';
 function chatMyName(){return myIndex>=0?(members[myIndex]||`メンバー${myIndex+1}`):'ゲスト'}
 
 function hideAll(){
-  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen','toyboxScreen','gameScreen','pokerScreen'].forEach(id=>{
+  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen','toyboxScreen','gameScreen','pokerScreen','chinScreen'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
 }
@@ -2512,6 +2567,333 @@ window._closeToybox=function(){
     } else {
       showMemberSelectScreen();
     }
+  }
+};
+
+// ═══ チンチロ（対戦ルーム制・オンライン対戦） ════════════════════
+const DB_CHIN='chinchiro_rooms';
+const CHIN_ROOM_IDS=['croom1','croom2'];
+const CHIN_ROOM_LABELS={croom1:'対戦ルーム1',croom2:'対戦ルーム2'};
+const CHIN_START_CHIPS=1000, CHIN_BET=50, CHIN_MAX_SEATS=10, CHIN_MIN_SEATS=2;
+const CHIN_DICE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
+let chinRooms={}, chinCurrentRoom=null, chinFrom='toybox', unsubChin=null;
+
+function chinEmptyRoom(){
+  return{seats:[],phase:'waiting',bankerSeatIdx:-1,handNum:0,
+    rollOrder:[],currentOrderIdx:0,turns:{},betAmount:CHIN_BET,
+    winnerInfo:null,updatedAt:Date.now()};
+}
+function chinRoll3(){
+  return[Math.ceil(Math.random()*6),Math.ceil(Math.random()*6),Math.ceil(Math.random()*6)];
+}
+function chinEval(dice){
+  const d=[...dice].sort((a,b)=>a-b);
+  if(d[0]===1&&d[1]===1&&d[2]===1)return{type:'pinzoro',score:100,desc:'ピンゾロ🎰',mult:3};
+  if(d[0]===4&&d[1]===5&&d[2]===6)return{type:'shigoro',score:90,desc:'シゴロ🎲',mult:2};
+  if(d[0]===d[1]&&d[1]===d[2])return{type:'zorome',score:50+d[0],desc:`ゾロ目（${d[0]}）🎯`,mult:2};
+  if(d[1]===d[2])return{type:'me',score:d[0],desc:`目（${d[0]}）`,mult:1};
+  if(d[0]===d[1])return{type:'me',score:d[2],desc:`目（${d[2]}）`,mult:1};
+  if(d[0]===1&&d[1]===2&&d[2]===3)return{type:'hifumi',score:-1,desc:'ヒフミ💀',mult:1};
+  return null;
+}
+function chinVsResult(pRes,bRes){
+  const pv=pRes&&pRes.score>0, bv=bRes&&bRes.score>0;
+  if(!pv&&!bv)return'tie';
+  if(!pv)return'banker_win';
+  if(!bv)return'player_win';
+  if(pRes.score>bRes.score)return'player_win';
+  if(pRes.score<bRes.score)return'banker_win';
+  return'tie';
+}
+function chinDoSettle(st){
+  const seats=st.seats;
+  const bi=st.bankerSeatIdx;
+  const banker=seats[bi];
+  const bRes=(st.turns['s'+bi]||{}).result||null;
+  const bet=st.betAmount||CHIN_BET;
+  const results=[];
+  st.rollOrder.forEach(i=>{
+    const s=seats[i];
+    if(!s||s.left)return;
+    const pRes=(st.turns['s'+i]||{}).result||null;
+    if(i===bi){
+      results.push({seatIdx:i,isbanker:true,name:s.name,
+        desc:bRes?bRes.desc:'役なし',resultText:'（親）'+(bRes?bRes.desc:'役なし'),win:null});
+      return;
+    }
+    const vs=chinVsResult(pRes,bRes);
+    let resultText;
+    if(vs==='player_win'){
+      const mult=Math.max((pRes?pRes.mult:1),1);
+      const payout=Math.min(bet*mult,banker.chips);
+      s.chips+=payout; banker.chips-=payout;
+      resultText=`✅ 勝ち ＋${payout}`;
+    } else if(vs==='banker_win'){
+      const mult=(bRes&&bRes.score>0)?Math.max(bRes.mult,1):1;
+      const payout=Math.min(bet*mult,s.chips);
+      s.chips-=payout; banker.chips+=payout;
+      resultText=`❌ 負け −${payout}`;
+    } else {
+      resultText='➖ 引き分け';
+    }
+    results.push({seatIdx:i,isbanker:false,name:s.name,
+      desc:pRes?pRes.desc:'役なし',resultText,win:vs==='player_win'});
+  });
+  st.winnerInfo={bankerName:banker.name,bankerDesc:bRes?bRes.desc:'役なし',results};
+  st.phase='settlement';
+}
+
+function chinRoomStatus(st){
+  const n=(st&&st.seats?st.seats.filter(s=>s&&!s.left).length:0);
+  if(n===0)return{text:'空室',cls:'empty'};
+  if(n===1)return{text:'対戦準備中',cls:'waiting'};
+  if(!st.phase||st.phase==='waiting')return{text:'対戦準備中',cls:'waiting'};
+  return{text:'対戦中',cls:'playing'};
+}
+function chinMySeatIdx(st){
+  if(!st||myIndex<0||!st.seats)return -1;
+  return st.seats.findIndex(s=>s&&!s.left&&s.idx===myIndex);
+}
+function chinRenderRoomList(){
+  const wrap=document.getElementById('chinRoomList');
+  if(!wrap)return;
+  let html='';
+  CHIN_ROOM_IDS.forEach(id=>{
+    const st=chinRooms[id];
+    const stat=chinRoomStatus(st);
+    const mySeat=chinMySeatIdx(st);
+    const n=(st&&st.seats?st.seats.filter(s=>s&&!s.left).length:0);
+    const full=n>=CHIN_MAX_SEATS;
+    let btnLabel='入室する',btnDisabled='';
+    if(mySeat>=0)btnLabel='ルームに戻る';
+    else if(full){btnLabel='満室です';btnDisabled='disabled';}
+    const names=(st&&st.seats?st.seats.filter(s=>s&&!s.left).map(s=>esc(s.name)).join('、'):'');
+    html+=`<div class="room-card">
+      <div class="rc-title">${CHIN_ROOM_LABELS[id]}</div>
+      <div class="room-badge ${stat.cls}">${stat.text}</div>
+      <div class="rc-players">${n}/${CHIN_MAX_SEATS}人${names?'：<b>'+names+'</b>':''}</div>
+      <button class="game-btn primary" ${btnDisabled} onclick="window._chinJoin('${id}')">${btnLabel}</button>
+    </div>`;
+  });
+  wrap.innerHTML=html;
+}
+window._chinJoin=async function(roomId){
+  if(myIndex<0){showToast('⚠️ 先にメンバーを選んでください');return}
+  let st=chinRooms[roomId]?JSON.parse(JSON.stringify(chinRooms[roomId])):chinEmptyRoom();
+  if(!st.seats)st.seats=[];
+  const mySeat=chinMySeatIdx(st);
+  if(mySeat>=0){chinEnterRoom(roomId);return}
+  if(st.seats.filter(s=>s&&!s.left).length>=CHIN_MAX_SEATS){showToast('⚠️ このルームは満室です');return}
+  const name=members[myIndex]||`メンバー${myIndex+1}`;
+  const newSeat={idx:myIndex,name,chips:CHIN_START_CHIPS,left:false};
+  let placed=false;
+  for(let i=0;i<st.seats.length;i++){
+    if(!st.seats[i]||st.seats[i].left){st.seats[i]=newSeat;placed=true;break;}
+  }
+  if(!placed)st.seats.push(newSeat);
+  st.updatedAt=Date.now();
+  chinRooms={...chinRooms,[roomId]:st};
+  chinEnterRoom(roomId);
+  const ok=await fbSet(DB_CHIN+'/'+roomId,st);
+  if(!ok)showToast('❌ 入室の保存に失敗しました');
+};
+function chinEnterRoom(roomId){
+  chinCurrentRoom=roomId;
+  document.getElementById('chinRoomList').style.display='none';
+  document.getElementById('chinRoomView').style.display='block';
+  document.getElementById('chinHeaderTitle').textContent='🎲 '+CHIN_ROOM_LABELS[roomId];
+  chinRenderRoomView();
+}
+function chinShowRoomList(){
+  chinCurrentRoom=null;
+  document.getElementById('chinRoomView').style.display='none';
+  document.getElementById('chinRoomList').style.display='flex';
+  document.getElementById('chinHeaderTitle').textContent='🎲 チンチロ';
+  chinRenderRoomList();
+}
+window._chinBack=function(){
+  if(chinCurrentRoom)chinShowRoomList();
+  else window._closeChin();
+};
+window._chinStart=async function(){
+  if(!chinCurrentRoom)return;
+  let st=JSON.parse(JSON.stringify(chinRooms[chinCurrentRoom]));
+  const allIdxs=st.seats.map((s,i)=>s&&!s.left&&s.chips>0?i:-1).filter(i=>i>=0);
+  if(allIdxs.length<CHIN_MIN_SEATS){showToast('⚠️ 開始には2人以上必要です');return}
+  st.handNum=(st.handNum||0)+1;
+  let nextBankerPos=0;
+  if(st.bankerSeatIdx>=0){
+    const curPos=allIdxs.indexOf(st.bankerSeatIdx);
+    if(curPos>=0)nextBankerPos=(curPos+1)%allIdxs.length;
+  }
+  st.bankerSeatIdx=allIdxs[nextBankerPos];
+  const bi=st.bankerSeatIdx;
+  st.rollOrder=[bi,...allIdxs.filter(i=>i!==bi)];
+  st.currentOrderIdx=0;
+  st.turns={};
+  st.rollOrder.forEach(i=>{ st.turns['s'+i]={rolls:[],result:null,rollsLeft:3,done:false}; });
+  st.phase='rolling'; st.winnerInfo=null; st.updatedAt=Date.now();
+  chinRooms={...chinRooms,[chinCurrentRoom]:st};
+  chinRenderRoomView();
+  await fbSet(DB_CHIN+'/'+chinCurrentRoom,st);
+};
+window._chinRoll=async function(){
+  if(!chinCurrentRoom)return;
+  let st=JSON.parse(JSON.stringify(chinRooms[chinCurrentRoom]));
+  if(st.phase!=='rolling')return;
+  const mySeatIdx=chinMySeatIdx(st);
+  if(mySeatIdx<0||mySeatIdx!==st.rollOrder[st.currentOrderIdx])return;
+  const key='s'+mySeatIdx;
+  const t=st.turns[key];
+  if(!t||t.done||t.rollsLeft<=0)return;
+  const dice=chinRoll3();
+  t.rolls.push(dice); t.rollsLeft--;
+  const result=chinEval(dice);
+  if(result||t.rollsLeft<=0){
+    t.result=result; t.done=true;
+    const next=st.currentOrderIdx+1;
+    if(next>=st.rollOrder.length){
+      chinDoSettle(st);
+    } else {
+      st.currentOrderIdx=next;
+    }
+  }
+  st.turns[key]=t; st.updatedAt=Date.now();
+  chinRooms={...chinRooms,[chinCurrentRoom]:st};
+  chinRenderRoomView();
+  await fbSet(DB_CHIN+'/'+chinCurrentRoom,st);
+};
+window._chinLeave=async function(isResign){
+  if(!chinCurrentRoom){chinShowRoomList();return}
+  const roomId=chinCurrentRoom;
+  let st=chinRooms[roomId]?JSON.parse(JSON.stringify(chinRooms[roomId])):null;
+  if(!st){chinShowRoomList();return}
+  if(isResign&&st.phase==='rolling'){
+    if(!confirm('途中退室します。よろしいですか？'))return;
+  }
+  const si=chinMySeatIdx(st);
+  if(si>=0){st.seats[si].left=true; st.updatedAt=Date.now();}
+  chinRooms={...chinRooms,[roomId]:st};
+  await fbSet(DB_CHIN+'/'+roomId,st);
+  chinShowRoomList();
+};
+
+function chinRenderRoomView(){
+  if(!chinCurrentRoom)return;
+  const st=chinRooms[chinCurrentRoom];
+  const tableEl=document.getElementById('chinTable');
+  const msgEl=document.getElementById('chinMsg');
+  const actionEl=document.getElementById('chinActionBar');
+  const btnsEl=document.getElementById('chinBtns');
+  if(!st){chinShowRoomList();return}
+  const mySeatIdx=chinMySeatIdx(st);
+  const seats=st.seats||[];
+  const bi=st.bankerSeatIdx;
+
+  if(st.phase==='waiting'){
+    const active=seats.filter(s=>s&&!s.left);
+    let seatsHtml='<div class="chin-seats">';
+    active.forEach(s=>{
+      const isMe=(s.idx===myIndex);
+      seatsHtml+=`<div class="chin-pcard${isMe?' mine':''}">
+        <div class="chin-pname">${esc(s.name)}</div>
+        <div class="chin-pchips">💰 ${s.chips}</div>
+      </div>`;
+    });
+    seatsHtml+='</div>';
+    const n=active.length;
+    tableEl.innerHTML=`<div class="chin-phase-label">参加者 ${n}/${CHIN_MAX_SEATS}人</div>${seatsHtml}
+      <div class="chin-bet-info">賭け額：${CHIN_BET}チップ／ハンド　開始チップ：${CHIN_START_CHIPS}<br>
+      役：ピンゾロ×3 ／ ゾロ目×2 ／ シゴロ×2 ／ 目（1〜6）×1 ／ ヒフミ・役なし＝負け</div>`;
+    msgEl.textContent=n>=2?`${n}人参加中。「対戦開始」を押してください`:`あと${CHIN_MIN_SEATS-n}人の参加をお待ちください`;
+    actionEl.innerHTML='';
+    btnsEl.innerHTML=(n>=2?`<button class="game-btn primary" onclick="window._chinStart()">▶ 対戦開始</button>`:'')
+      +`<button class="game-btn" onclick="window._chinLeave(false)">🚪 退室する</button>`;
+
+  } else if(st.phase==='rolling'){
+    const currentSeatIdx=st.rollOrder[st.currentOrderIdx];
+    const isMyTurn=(mySeatIdx>=0&&mySeatIdx===currentSeatIdx);
+    let seatsHtml='<div class="chin-seats">';
+    st.rollOrder.forEach(i=>{
+      const s=seats[i]; if(!s)return;
+      const key='s'+i;
+      const t=st.turns[key]||{rolls:[],rollsLeft:3,done:false,result:null};
+      const isBanker=(i===bi);
+      const isCurrent=(i===currentSeatIdx);
+      const isMe=(i===mySeatIdx);
+      const lastRoll=t.rolls.length>0?t.rolls[t.rolls.length-1]:null;
+      const diceHtml=lastRoll
+        ?`<div class="chin-dice">${lastRoll.map(d=>CHIN_DICE[d]).join('')}</div>`
+        :`<div class="chin-dice-empty">？ ？ ？</div>`;
+      let badgeHtml='';
+      if(t.done&&t.result)badgeHtml=`<div class="chin-result-badge good">${t.result.desc}</div>`;
+      else if(t.done&&!t.result)badgeHtml=`<div class="chin-result-badge bad">役なし</div>`;
+      else if(t.rolls.length>0&&!t.done)badgeHtml=`<div class="chin-rolls-left">残り${t.rollsLeft}回</div>`;
+      seatsHtml+=`<div class="chin-pcard${isBanker?' banker':''}${isCurrent?' current':''}${isMe?' mine':''}">
+        <div class="chin-pname">${esc(s.name)}
+          ${isBanker?'<span class="chin-tag">親</span>':''}
+          ${isCurrent&&!t.done?'<span class="chin-tag rolling">振り中</span>':''}
+        </div>
+        ${diceHtml}${badgeHtml}
+        <div class="chin-pchips">💰 ${s.chips}</div>
+      </div>`;
+    });
+    seatsHtml+='</div>';
+    tableEl.innerHTML=`<div class="chin-phase-label">ロール中 ｜ 賭け額：${st.betAmount}チップ</div>${seatsHtml}`;
+    const actingName=seats[currentSeatIdx]?seats[currentSeatIdx].name:'';
+    msgEl.textContent=isMyTurn?'あなたの番です！サイコロを振ってください':`${actingName}さんがサイコロを振っています…`;
+    if(isMyTurn){
+      const t=st.turns['s'+mySeatIdx]||{rollsLeft:3};
+      actionEl.innerHTML=`<button class="game-btn primary" onclick="window._chinRoll()" style="font-size:1.05rem;padding:12px 28px">🎲 サイコロを振る（残り${t.rollsLeft}回）</button>`;
+    } else {
+      actionEl.innerHTML='';
+    }
+    btnsEl.innerHTML=`<button class="game-btn" onclick="window._chinLeave(true)">🚪 途中退室する</button>`;
+
+  } else if(st.phase==='settlement'){
+    const info=st.winnerInfo;
+    let seatsHtml='<div class="chin-seats">';
+    (info&&info.results?info.results:[]).forEach(r=>{
+      const cls=r.win===true?' win':r.win===false?' loss':'';
+      const badgeCls=r.win===true?' good':r.win===false?' bad':'';
+      seatsHtml+=`<div class="chin-pcard${r.isbanker?' banker':''}${cls}">
+        <div class="chin-pname">${esc(r.name)}${r.isbanker?'<span class="chin-tag">親</span>':''}</div>
+        <div class="chin-result-badge${badgeCls}">${r.desc}</div>
+        <div class="chin-result-text">${r.resultText}</div>
+        <div class="chin-pchips">💰 ${seats.find(s=>s&&s.name===r.name)?.chips??'?'}</div>
+      </div>`;
+    });
+    seatsHtml+='</div>';
+    tableEl.innerHTML=`<div class="chin-phase-label">決算結果</div>${seatsHtml}`;
+    msgEl.textContent='ハンド終了！次のハンドへ進めます';
+    actionEl.innerHTML='';
+    const stillIn=seats.filter(s=>s&&!s.left&&s.chips>0).length;
+    btnsEl.innerHTML=(stillIn>=2?`<button class="game-btn primary" onclick="window._chinStart()">▶ 次のハンドへ</button>`:'')
+      +`<button class="game-btn" onclick="window._chinLeave(false)">🚪 退室する</button>`;
+  }
+}
+window._openChin=function(){
+  chinFrom=document.getElementById('appScreen').style.display==='block'?'app':'toybox';
+  hideAll();
+  document.getElementById('chinScreen').style.display='block';
+  chinShowRoomList();
+  if(!unsubChin){
+    unsubChin=fbListen(DB_CHIN,val=>{
+      chinRooms=val||{};
+      if(chinCurrentRoom)chinRenderRoomView();
+      else chinRenderRoomList();
+    });
+  } else {
+    if(chinCurrentRoom)chinRenderRoomView(); else chinRenderRoomList();
+  }
+};
+window._closeChin=function(){
+  document.getElementById('chinScreen').style.display='none';
+  if(chinFrom==='app'){document.getElementById('appScreen').style.display='block';}
+  else if(chinFrom==='toybox'){document.getElementById('toyboxScreen').style.display='block';}
+  else{
+    if(myIndex>=0){renderLoginScreen();document.getElementById('loginScreen').style.display='flex';}
+    else{showMemberSelectScreen();}
   }
 };
 
