@@ -2635,6 +2635,58 @@ function chinEmptyRoom(){
     rollOrder:[],currentOrderIdx:0,turns:{},betAmount:CHIN_BET,
     winnerInfo:null,updatedAt:Date.now()};
 }
+
+// Firebase往復で配列→オブジェクト化された値を正規化
+function chinNorm(st){
+  if(!st)return st;
+  // seats配列の正規化
+  if(st.seats&&!Array.isArray(st.seats)){
+    const arr=[];
+    Object.entries(st.seats).forEach(([k,v])=>{arr[+k]=v;});
+    st.seats=arr;
+  }
+  st.seats=(st.seats||[]).map(s=>{
+    if(!s)return s;
+    return s;
+  });
+  // rollOrder配列の正規化
+  if(st.rollOrder&&!Array.isArray(st.rollOrder)){
+    const arr=[];
+    Object.entries(st.rollOrder).forEach(([k,v])=>{arr[+k]=v;});
+    st.rollOrder=arr;
+  }
+  st.rollOrder=st.rollOrder||[];
+  // turns内のrolls（配列of配列）の正規化
+  if(st.turns){
+    Object.keys(st.turns).forEach(key=>{
+      const t=st.turns[key];
+      if(!t)return;
+      if(t.rolls&&!Array.isArray(t.rolls)){
+        const arr=[];
+        Object.entries(t.rolls).forEach(([k,v])=>{
+          // 各rollも配列→オブジェクトの可能性
+          if(v&&!Array.isArray(v)){
+            const roll=[];
+            Object.entries(v).forEach(([kk,vv])=>{roll[+kk]=vv;});
+            arr[+k]=roll;
+          } else arr[+k]=v;
+        });
+        t.rolls=arr;
+      } else if(Array.isArray(t.rolls)){
+        t.rolls=t.rolls.map(roll=>{
+          if(roll&&!Array.isArray(roll)){
+            const arr=[];
+            Object.entries(roll).forEach(([k,v])=>{arr[+k]=v;});
+            return arr;
+          }
+          return roll;
+        });
+      }
+    });
+  }
+  return st;
+}
+
 function chinRoll3(){
   return[Math.ceil(Math.random()*6),Math.ceil(Math.random()*6),Math.ceil(Math.random()*6)];
 }
@@ -2643,9 +2695,9 @@ function chinEval(dice){
   if(d[0]===1&&d[1]===1&&d[2]===1)return{type:'pinzoro',score:100,desc:'ピンゾロ🎰',mult:3};
   if(d[0]===4&&d[1]===5&&d[2]===6)return{type:'shigoro',score:90,desc:'シゴロ🎲',mult:2};
   if(d[0]===d[1]&&d[1]===d[2])return{type:'zorome',score:50+d[0],desc:`ゾロ目（${d[0]}）🎯`,mult:2};
+  if(d[0]===1&&d[1]===2&&d[2]===3)return{type:'hifumi',score:-1,desc:'ヒフミ💀',mult:1};
   if(d[1]===d[2])return{type:'me',score:d[0],desc:`目（${d[0]}）`,mult:1};
   if(d[0]===d[1])return{type:'me',score:d[2],desc:`目（${d[2]}）`,mult:1};
-  if(d[0]===1&&d[1]===2&&d[2]===3)return{type:'hifumi',score:-1,desc:'ヒフミ💀',mult:1};
   return null;
 }
 function chinVsResult(pRes,bRes){
@@ -2657,22 +2709,63 @@ function chinVsResult(pRes,bRes){
   if(pRes.score<bRes.score)return'banker_win';
   return'tie';
 }
+
+// currentOrderIdxをleft/done済みを飛ばして次の人へ進める
+function chinAdvanceOrder(st){
+  const total=st.rollOrder.length;
+  let next=st.currentOrderIdx+1;
+  while(next<total){
+    const si=st.rollOrder[next];
+    const s=st.seats[si];
+    const t=st.turns['s'+si];
+    if(s&&!s.left&&t&&!t.done){ break; }
+    next++;
+  }
+  if(next>=total){
+    chinDoSettle(st);
+  } else {
+    st.currentOrderIdx=next;
+  }
+}
+
 function chinDoSettle(st){
   const seats=st.seats;
   const bi=st.bankerSeatIdx;
   const banker=seats[bi];
-  const bRes=(st.turns['s'+bi]||{}).result||null;
+  if(!banker)return;
+  const bTurn=st.turns['s'+bi]||{};
+  const bRes=bTurn.forfeited?null:(bTurn.result||null);
   const bet=st.betAmount||CHIN_BET;
   const results=[];
+
   st.rollOrder.forEach(i=>{
     const s=seats[i];
-    if(!s||s.left)return;
-    const pRes=(st.turns['s'+i]||{}).result||null;
+    if(!s)return;
+    const tData=st.turns['s'+i]||{};
+    const pRes=tData.forfeited?null:(tData.result||null);
+
     if(i===bi){
-      results.push({seatIdx:i,isbanker:true,name:s.name,
-        desc:bRes?bRes.desc:'役なし',resultText:'（親）'+(bRes?bRes.desc:'役なし'),win:null});
+      const desc=tData.forfeited?'途中退室':( bRes?bRes.desc:'役なし' );
+      results.push({seatIdx:i,isbanker:true,name:s.name,desc,resultText:'（親）'+desc,win:null,forfeited:!!tData.forfeited});
       return;
     }
+
+    // 退室プレイヤーは無条件で負け（ベット没収）
+    if(tData.forfeited||s.left){
+      const payout=Math.min(bet,s.chips);
+      s.chips-=payout; banker.chips+=payout;
+      results.push({seatIdx:i,isbanker:false,name:s.name,desc:'途中退室',
+        resultText:`❌ 途中退室（−${payout}）`,win:false,forfeited:true});
+      return;
+    }
+
+    // 親が退室した場合は子全員引き分け
+    if(bTurn.forfeited||!banker){
+      results.push({seatIdx:i,isbanker:false,name:s.name,desc:pRes?pRes.desc:'役なし',
+        resultText:'➖ 親の退室により引き分け',win:null});
+      return;
+    }
+
     const vs=chinVsResult(pRes,bRes);
     let resultText;
     if(vs==='player_win'){
@@ -2681,7 +2774,7 @@ function chinDoSettle(st){
       s.chips+=payout; banker.chips-=payout;
       resultText=`✅ 勝ち ＋${payout}`;
     } else if(vs==='banker_win'){
-      const mult=(bRes&&bRes.score>0)?Math.max(bRes.mult,1):1;
+      const mult=Math.max((bRes?bRes.mult:1),1);
       const payout=Math.min(bet*mult,s.chips);
       s.chips-=payout; banker.chips+=payout;
       resultText=`❌ 負け −${payout}`;
@@ -2691,7 +2784,8 @@ function chinDoSettle(st){
     results.push({seatIdx:i,isbanker:false,name:s.name,
       desc:pRes?pRes.desc:'役なし',resultText,win:vs==='player_win'});
   });
-  st.winnerInfo={bankerName:banker.name,bankerDesc:bRes?bRes.desc:'役なし',results};
+
+  st.winnerInfo={bankerName:banker.name,results};
   st.phase='settlement';
 }
 
@@ -2731,7 +2825,7 @@ function chinRenderRoomList(){
 }
 window._chinJoin=async function(roomId){
   if(myIndex<0){showToast('⚠️ 先にメンバーを選んでください');return}
-  let st=chinRooms[roomId]?JSON.parse(JSON.stringify(chinRooms[roomId])):chinEmptyRoom();
+  let st=chinRooms[roomId]?chinNorm(JSON.parse(JSON.stringify(chinRooms[roomId]))):chinEmptyRoom();
   if(!st.seats)st.seats=[];
   const mySeat=chinMySeatIdx(st);
   if(mySeat>=0){chinEnterRoom(roomId);return}
@@ -2769,7 +2863,7 @@ window._chinBack=function(){
 };
 window._chinStart=async function(){
   if(!chinCurrentRoom)return;
-  let st=JSON.parse(JSON.stringify(chinRooms[chinCurrentRoom]));
+  let st=chinNorm(JSON.parse(JSON.stringify(chinRooms[chinCurrentRoom])));
   const allIdxs=st.seats.map((s,i)=>s&&!s.left&&s.chips>0?i:-1).filter(i=>i>=0);
   if(allIdxs.length<CHIN_MIN_SEATS){showToast('⚠️ 開始には2人以上必要です');return}
   st.handNum=(st.handNum||0)+1;
@@ -2783,7 +2877,9 @@ window._chinStart=async function(){
   st.rollOrder=[bi,...allIdxs.filter(i=>i!==bi)];
   st.currentOrderIdx=0;
   st.turns={};
-  st.rollOrder.forEach(i=>{ st.turns['s'+i]={rolls:[],result:null,rollsLeft:3,done:false}; });
+  st.rollOrder.forEach(i=>{
+    st.turns['s'+i]={rolls:[],result:null,rollsLeft:3,done:false,forfeited:false};
+  });
   st.phase='rolling'; st.winnerInfo=null; st.updatedAt=Date.now();
   chinRooms={...chinRooms,[chinCurrentRoom]:st};
   chinRenderRoomView();
@@ -2791,7 +2887,7 @@ window._chinStart=async function(){
 };
 window._chinRoll=async function(){
   if(!chinCurrentRoom)return;
-  let st=JSON.parse(JSON.stringify(chinRooms[chinCurrentRoom]));
+  let st=chinNorm(JSON.parse(JSON.stringify(chinRooms[chinCurrentRoom])));
   if(st.phase!=='rolling')return;
   const mySeatIdx=chinMySeatIdx(st);
   if(mySeatIdx<0||mySeatIdx!==st.rollOrder[st.currentOrderIdx])return;
@@ -2799,18 +2895,19 @@ window._chinRoll=async function(){
   const t=st.turns[key];
   if(!t||t.done||t.rollsLeft<=0)return;
   const dice=chinRoll3();
-  t.rolls.push(dice); t.rollsLeft--;
+  if(!Array.isArray(t.rolls))t.rolls=[];
+  t.rolls.push(dice);
+  t.rollsLeft--;
   const result=chinEval(dice);
   if(result||t.rollsLeft<=0){
-    t.result=result; t.done=true;
-    const next=st.currentOrderIdx+1;
-    if(next>=st.rollOrder.length){
-      chinDoSettle(st);
-    } else {
-      st.currentOrderIdx=next;
-    }
+    t.result=result||null;
+    t.done=true;
+    st.turns[key]=t;
+    chinAdvanceOrder(st);
+  } else {
+    st.turns[key]=t;
   }
-  st.turns[key]=t; st.updatedAt=Date.now();
+  st.updatedAt=Date.now();
   chinRooms={...chinRooms,[chinCurrentRoom]:st};
   chinRenderRoomView();
   await fbSet(DB_CHIN+'/'+chinCurrentRoom,st);
@@ -2818,21 +2915,54 @@ window._chinRoll=async function(){
 window._chinLeave=async function(isResign){
   if(!chinCurrentRoom){chinShowRoomList();return}
   const roomId=chinCurrentRoom;
-  let st=chinRooms[roomId]?JSON.parse(JSON.stringify(chinRooms[roomId])):null;
+  let st=chinRooms[roomId]?chinNorm(JSON.parse(JSON.stringify(chinRooms[roomId]))):null;
   if(!st){chinShowRoomList();return}
-  if(isResign&&st.phase==='rolling'){
-    if(!confirm('途中退室します。よろしいですか？'))return;
-  }
   const si=chinMySeatIdx(st);
-  if(si>=0){st.seats[si].left=true; st.updatedAt=Date.now();}
-  chinRooms={...chinRooms,[roomId]:st};
-  await fbSet(DB_CHIN+'/'+roomId,st);
+
+  if(isResign&&st.phase==='rolling'){
+    if(!confirm('途中退室するとこのハンドは負け（ベット没収）になります。よろしいですか？'))return;
+    if(si>=0){
+      // ターン情報を退室フラグ付きで完了にする
+      const key='s'+si;
+      if(!st.turns[key])st.turns[key]={rolls:[],result:null,rollsLeft:0,done:false,forfeited:false};
+      st.turns[key].done=true;
+      st.turns[key].forfeited=true;
+      st.turns[key].rollsLeft=0;
+      st.seats[si].left=true;
+
+      // 今自分の番だった場合は次へ進める
+      if(st.rollOrder[st.currentOrderIdx]===si){
+        chinAdvanceOrder(st);
+      } else {
+        // 自分の番ではなかった場合も、後でchinAdvanceOrderが飛ばす
+        // ただし全員done済みになってないか確認
+        const remaining=st.rollOrder.filter(i=>{
+          const s=st.seats[i]; const t=st.turns['s'+i];
+          return s&&!s.left&&t&&!t.done;
+        });
+        if(remaining.length===0)chinDoSettle(st);
+      }
+      st.updatedAt=Date.now();
+      chinRooms={...chinRooms,[roomId]:st};
+      await fbSet(DB_CHIN+'/'+roomId,st);
+    }
+    chinShowRoomList();
+    return;
+  }
+
+  // 対戦外（waiting/settlement）での退室はペナルティなし
+  if(si>=0){
+    st.seats[si].left=true;
+    st.updatedAt=Date.now();
+    chinRooms={...chinRooms,[roomId]:st};
+    await fbSet(DB_CHIN+'/'+roomId,st);
+  }
   chinShowRoomList();
 };
 
 function chinRenderRoomView(){
   if(!chinCurrentRoom)return;
-  const st=chinRooms[chinCurrentRoom];
+  const st=chinNorm(chinRooms[chinCurrentRoom]?JSON.parse(JSON.stringify(chinRooms[chinCurrentRoom])):null);
   const tableEl=document.getElementById('chinTable');
   const msgEl=document.getElementById('chinMsg');
   const actionEl=document.getElementById('chinActionBar');
@@ -2869,19 +2999,20 @@ function chinRenderRoomView(){
     st.rollOrder.forEach(i=>{
       const s=seats[i]; if(!s)return;
       const key='s'+i;
-      const t=st.turns[key]||{rolls:[],rollsLeft:3,done:false,result:null};
+      const t=st.turns[key]||{rolls:[],rollsLeft:3,done:false,result:null,forfeited:false};
       const isBanker=(i===bi);
       const isCurrent=(i===currentSeatIdx);
       const isMe=(i===mySeatIdx);
-      const lastRoll=t.rolls.length>0?t.rolls[t.rolls.length-1]:null;
-      const diceHtml=lastRoll
-        ?`<div class="chin-dice">${lastRoll.map(d=>CHIN_DICE[d]).join('')}</div>`
+      const lastRoll=(t.rolls&&t.rolls.length>0)?t.rolls[t.rolls.length-1]:null;
+      const diceHtml=lastRoll&&Array.isArray(lastRoll)
+        ?`<div class="chin-dice">${lastRoll.map(d=>CHIN_DICE[d]||'?').join('')}</div>`
         :`<div class="chin-dice-empty">？ ？ ？</div>`;
       let badgeHtml='';
-      if(t.done&&t.result)badgeHtml=`<div class="chin-result-badge good">${t.result.desc}</div>`;
+      if(t.forfeited)badgeHtml=`<div class="chin-result-badge bad">途中退室</div>`;
+      else if(t.done&&t.result)badgeHtml=`<div class="chin-result-badge good">${t.result.desc}</div>`;
       else if(t.done&&!t.result)badgeHtml=`<div class="chin-result-badge bad">役なし</div>`;
-      else if(t.rolls.length>0&&!t.done)badgeHtml=`<div class="chin-rolls-left">残り${t.rollsLeft}回</div>`;
-      seatsHtml+=`<div class="chin-pcard${isBanker?' banker':''}${isCurrent?' current':''}${isMe?' mine':''}">
+      else if(t.rolls&&t.rolls.length>0&&!t.done)badgeHtml=`<div class="chin-rolls-left">残り${t.rollsLeft}回</div>`;
+      seatsHtml+=`<div class="chin-pcard${isBanker?' banker':''}${isCurrent&&!t.done?' current':''}${isMe?' mine':''}${s.left?' folded':''}">
         <div class="chin-pname">${esc(s.name)}
           ${isBanker?'<span class="chin-tag">親</span>':''}
           ${isCurrent&&!t.done?'<span class="chin-tag rolling">振り中</span>':''}
@@ -2893,14 +3024,15 @@ function chinRenderRoomView(){
     seatsHtml+='</div>';
     tableEl.innerHTML=`<div class="chin-phase-label">ロール中 ｜ 賭け額：${st.betAmount}チップ</div>${seatsHtml}`;
     const actingName=seats[currentSeatIdx]?seats[currentSeatIdx].name:'';
-    msgEl.textContent=isMyTurn?'あなたの番です！サイコロを振ってください':`${actingName}さんがサイコロを振っています…`;
+    msgEl.textContent=isMyTurn?'あなたの番です！サイコロを振ってください'
+      :(actingName?`${actingName}さんがサイコロを振っています…`:'');
     if(isMyTurn){
       const t=st.turns['s'+mySeatIdx]||{rollsLeft:3};
       actionEl.innerHTML=`<button class="game-btn primary" onclick="window._chinRoll()" style="font-size:1.05rem;padding:12px 28px">🎲 サイコロを振る（残り${t.rollsLeft}回）</button>`;
     } else {
       actionEl.innerHTML='';
     }
-    btnsEl.innerHTML=`<button class="game-btn" onclick="window._chinLeave(true)">🚪 途中退室する</button>`;
+    btnsEl.innerHTML=`<button class="game-btn" style="color:#B91C1C;border-color:#FCA5A5" onclick="window._chinLeave(true)">🚪 途中退室する（このハンドは負けになります）</button>`;
 
   } else if(st.phase==='settlement'){
     const info=st.winnerInfo;
@@ -2908,11 +3040,13 @@ function chinRenderRoomView(){
     (info&&info.results?info.results:[]).forEach(r=>{
       const cls=r.win===true?' win':r.win===false?' loss':'';
       const badgeCls=r.win===true?' good':r.win===false?' bad':'';
+      const chipNow=seats.find(s=>s&&s.idx!==undefined&&r.seatIdx!==undefined&&seats.indexOf(s)===r.seatIdx);
+      const chipVal=chipNow?chipNow.chips:'?';
       seatsHtml+=`<div class="chin-pcard${r.isbanker?' banker':''}${cls}">
         <div class="chin-pname">${esc(r.name)}${r.isbanker?'<span class="chin-tag">親</span>':''}</div>
         <div class="chin-result-badge${badgeCls}">${r.desc}</div>
         <div class="chin-result-text">${r.resultText}</div>
-        <div class="chin-pchips">💰 ${seats.find(s=>s&&s.name===r.name)?.chips??'?'}</div>
+        <div class="chin-pchips">💰 ${chipVal}</div>
       </div>`;
     });
     seatsHtml+='</div>';
@@ -2931,7 +3065,8 @@ window._openChin=function(){
   chinShowRoomList();
   if(!unsubChin){
     unsubChin=fbListen(DB_CHIN,val=>{
-      chinRooms=val||{};
+      chinRooms={};
+      if(val)Object.entries(val).forEach(([id,r])=>{chinRooms[id]=chinNorm(r);});
       if(chinCurrentRoom)chinRenderRoomView();
       else chinRenderRoomList();
     });
