@@ -211,6 +211,29 @@ header{background:var(--navy);padding:12px 18px;display:flex;align-items:center;
 .chin-msg{font-size:.82rem;color:var(--muted);text-align:center;font-weight:600;min-height:1.2em}
 .chin-action-bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
 
+/* ── チェス ── */
+#chessScreen{display:none}
+.chess-wrap{max-width:540px;margin:0 auto;padding:18px 14px 60px;display:flex;flex-direction:column;align-items:center;gap:12px}
+#chessBoardEl{display:grid;grid-template-columns:repeat(8,1fr);width:min(92vw,480px);aspect-ratio:1/1;border-radius:6px;overflow:hidden;box-shadow:0 14px 40px rgba(27,42,74,.28)}
+.csq{display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;aspect-ratio:1/1}
+.csq.lt{background:#F0D9B5}.csq.dk{background:#B58863}
+.csq.sel{background:#F6F669!important}
+.csq.lm{background:rgba(155,199,0,.45)!important}
+.csq.sel.lm{background:#F6F669!important}
+.csp{font-size:clamp(1.2rem,6vw,2.1rem);line-height:1;user-select:none;position:relative;z-index:1}
+.csp.wp{color:#fff;text-shadow:0 0 1px #444,1px 1px 0 #444,-1px -1px 0 #444,1px -1px 0 #444,-1px 1px 0 #444}
+.csp.bp{color:#1B2A4A}
+.cdot{position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(0,0,0,.22);z-index:2;pointer-events:none}
+.ccap{position:absolute;inset:3px;border-radius:50%;border:4px solid rgba(0,0,0,.28);z-index:0;pointer-events:none}
+.chess-info{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px}
+.chess-players{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.chess-player-pill{padding:6px 12px;border-radius:20px;font-size:.8rem;font-weight:700;background:#fff;border:1.5px solid var(--border);color:var(--navy);white-space:nowrap}
+.chess-player-pill.active{border-color:#22C55E;background:#DCFCE7;color:#14532D}
+.chess-player-pill.mine{border-color:var(--blue)}
+.chess-turn-arrow{font-size:1.1rem;color:var(--muted)}
+.chess-msg{font-size:.82rem;color:var(--muted);text-align:center;font-weight:600;min-height:1.2em}
+.chess-action-bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+
 /* ── ポーカー ── */
 #pokerScreen{display:none}
 .poker-wrap{max-width:920px;margin:0 auto;padding:18px 14px 60px;display:flex;flex-direction:column;align-items:center;gap:14px}
@@ -665,6 +688,14 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       </div>
       <span class="tb-arrow">›</span>
     </button>
+    <button class="toybox-card" onclick="window._openChess&&window._openChess()">
+      <span class="tb-icon">♟</span>
+      <div class="tb-info">
+        <div class="tb-title">チェス</div>
+        <div class="tb-desc">2人で対戦・移動アシスト機能付き</div>
+      </div>
+      <span class="tb-arrow">›</span>
+    </button>
   </div>
 </div>
 
@@ -740,6 +771,27 @@ footer{text-align:center;padding:14px;font-size:.68rem;color:var(--muted)}
       <div class="chin-msg" id="chinMsg">&nbsp;</div>
       <div class="chin-action-bar" id="chinActionBar"></div>
       <div class="game-btns" id="chinBtns"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ゲーム（チェス） -->
+<div id="chessScreen" style="display:none">
+  <header>
+    <div class="h-left">
+      <h1 id="chessHeaderTitle">♟ チェス</h1>
+      <p>2人でオンライン対戦・移動アシスト機能付き</p>
+    </div>
+    <button class="hbtn" onclick="window._chessBack&&window._chessBack()">← 戻る</button>
+  </header>
+  <div class="chess-wrap">
+    <div id="chessRoomList" class="room-list"></div>
+    <div id="chessRoomView" style="display:none;width:100%">
+      <div class="chess-info" id="chessInfo"></div>
+      <div id="chessBoardEl"></div>
+      <div class="chess-msg" id="chessMsg">&nbsp;</div>
+      <div class="chess-action-bar" id="chessActionBar"></div>
+      <div class="game-btns" id="chessBtns"></div>
     </div>
   </div>
 </div>
@@ -1656,7 +1708,7 @@ let chatMsgs={},unsubChat=null,chatFrom='login';
 function chatMyName(){return myIndex>=0?(members[myIndex]||`メンバー${myIndex+1}`):'ゲスト'}
 
 function hideAll(){
-  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen','toyboxScreen','gameScreen','pokerScreen','chinScreen'].forEach(id=>{
+  ['memberSelectScreen','loginScreen','appScreen','todayScreen','mapScreen','chatScreen','toyboxScreen','gameScreen','pokerScreen','chinScreen','chessScreen'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
 }
@@ -2895,6 +2947,380 @@ window._closeChin=function(){
     if(myIndex>=0){renderLoginScreen();document.getElementById('loginScreen').style.display='flex';}
     else{showMemberSelectScreen();}
   }
+};
+
+// ═══ チェス（対戦ルーム制・オンライン対戦・移動アシスト付き） ═══
+const DB_CHESS='chess_rooms';
+const CHESS_ROOM_IDS=['chess1','chess2'];
+const CHESS_ROOM_LABELS={chess1:'対戦ルーム1',chess2:'対戦ルーム2'};
+const CPC={wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',
+           bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'};
+let chessRooms={}, chessCurrentRoom=null, chessFrom='toybox', unsubChess=null;
+let chessSel=null, chessHL=new Set(), chessCAP=new Set();
+
+function cIdx(r,c){return r*8+c}
+function cRc(i){return[Math.floor(i/8),i%8]}
+function chessInitBoard(){
+  const b=Array(64).fill('');
+  ['R','N','B','Q','K','B','N','R'].forEach((p,c)=>{b[c]='b'+p;b[56+c]='w'+p;});
+  for(let c=0;c<8;c++){b[8+c]='bP';b[48+c]='wP';}
+  return b;
+}
+function chessEmptyRoom(){
+  return{seats:[],phase:'waiting',board:chessInitBoard(),turn:'w',
+    cr:{wK:true,wQ:true,bK:true,bQ:true},ep:null,lastMove:null,
+    winner:null,winReason:null,handNum:0,updatedAt:Date.now()};
+}
+function chessNorm(st){
+  if(!st)return st;
+  if(!Array.isArray(st.board)){
+    const arr=Array(64).fill('');
+    if(st.board)Object.entries(st.board).forEach(([k,v])=>{arr[+k]=v||'';});
+    st.board=arr;
+  } else st.board=st.board.map(v=>v||'');
+  if(st.ep&&!Array.isArray(st.ep))st.ep=[st.ep[0]||0,st.ep[1]||0];
+  if(!st.cr)st.cr={wK:false,wQ:false,bK:false,bQ:false};
+  return st;
+}
+
+// ── チェスロジック ──
+function cPseudo(board,r,c,cr,ep,nocastle=false){
+  const p=board[cIdx(r,c)]; if(!p)return[];
+  const col=p[0],tp=p[1],opp=col==='w'?'b':'w';
+  const mv=[];
+  const ok=(tr,tc)=>{
+    if(tr<0||tr>7||tc<0||tc>7)return false;
+    const t=board[cIdx(tr,tc)]; return!t||t[0]===opp;
+  };
+  const isOp=(tr,tc)=>{
+    if(tr<0||tr>7||tc<0||tc>7)return false; const t=board[cIdx(tr,tc)]; return t&&t[0]===opp;
+  };
+  const emp=(tr,tc)=>{
+    if(tr<0||tr>7||tc<0||tc>7)return false; return!board[cIdx(tr,tc)];
+  };
+  const slide=dirs=>dirs.forEach(([dr,dc])=>{
+    for(let s=1;s<8;s++){
+      const tr=r+dr*s,tc=c+dc*s;
+      if(tr<0||tr>7||tc<0||tc>7)break;
+      if(emp(tr,tc))mv.push(cIdx(tr,tc));
+      else if(isOp(tr,tc)){mv.push(cIdx(tr,tc));break;}
+      else break;
+    }
+  });
+  if(tp==='P'){
+    const d=col==='w'?-1:1,sr=col==='w'?6:1;
+    if(emp(r+d,c)){mv.push(cIdx(r+d,c));if(r===sr&&emp(r+2*d,c))mv.push(cIdx(r+2*d,c));}
+    [-1,1].forEach(dc=>{
+      if(isOp(r+d,c+dc))mv.push(cIdx(r+d,c+dc));
+      if(ep&&r+d===ep[0]&&c+dc===ep[1])mv.push(cIdx(r+d,c+dc));
+    });
+  } else if(tp==='N'){
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
+      if(ok(r+dr,c+dc))mv.push(cIdx(r+dr,c+dc));
+    });
+  } else if(tp==='B')slide([[1,1],[1,-1],[-1,1],[-1,-1]]);
+  else if(tp==='R')slide([[0,1],[0,-1],[1,0],[-1,0]]);
+  else if(tp==='Q')slide([[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]);
+  else if(tp==='K'){
+    [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>{
+      if(ok(r+dr,c+dc))mv.push(cIdx(r+dr,c+dc));
+    });
+    if(!nocastle){
+      if(col==='w'&&r===7&&c===4){
+        if(cr.wK&&emp(7,5)&&emp(7,6)&&board[cIdx(7,7)]==='wR')mv.push(cIdx(7,6));
+        if(cr.wQ&&emp(7,3)&&emp(7,2)&&emp(7,1)&&board[cIdx(7,0)]==='wR')mv.push(cIdx(7,2));
+      }
+      if(col==='b'&&r===0&&c===4){
+        if(cr.bK&&emp(0,5)&&emp(0,6)&&board[cIdx(0,7)]==='bR')mv.push(cIdx(0,6));
+        if(cr.bQ&&emp(0,3)&&emp(0,2)&&emp(0,1)&&board[cIdx(0,0)]==='bR')mv.push(cIdx(0,2));
+      }
+    }
+  }
+  return mv;
+}
+function cAttacked(board,r,c,byCol){
+  for(let i=0;i<64;i++){
+    if(!board[i]||board[i][0]!==byCol)continue;
+    const[pr,pc]=cRc(i);
+    if(cPseudo(board,pr,pc,{wK:false,wQ:false,bK:false,bQ:false},null,true).includes(cIdx(r,c)))return true;
+  }
+  return false;
+}
+function cInCheck(board,col){
+  const ki=board.indexOf(col+'K'); if(ki<0)return true;
+  const[kr,kc]=cRc(ki); return cAttacked(board,kr,kc,col==='w'?'b':'w');
+}
+function cApply(board,from,to,cr,ep){
+  const nb=[...board];
+  const p=nb[from]; const[fr,fc]=cRc(from); const[tr,tc]=cRc(to);
+  const col=p[0],tp=p[1]; const ncr={...cr}; let nep=null;
+  if(tp==='P'){
+    if(ep&&tr===ep[0]&&tc===ep[1])nb[cIdx(col==='w'?tr+1:tr-1,tc)]='';
+    if(Math.abs(tr-fr)===2)nep=[(fr+tr)/2,fc];
+  }
+  if(tp==='K'){
+    if(Math.abs(tc-fc)===2){
+      if(tc===6){nb[cIdx(tr,5)]=nb[cIdx(tr,7)];nb[cIdx(tr,7)]='';}
+      else{nb[cIdx(tr,3)]=nb[cIdx(tr,0)];nb[cIdx(tr,0)]='';}
+    }
+    if(col==='w'){ncr.wK=false;ncr.wQ=false;}else{ncr.bK=false;ncr.bQ=false;}
+  }
+  if(tp==='R'){
+    if(fr===7&&fc===0)ncr.wQ=false; if(fr===7&&fc===7)ncr.wK=false;
+    if(fr===0&&fc===0)ncr.bQ=false; if(fr===0&&fc===7)ncr.bK=false;
+  }
+  nb[to]=(tp==='P'&&(tr===0||tr===7))?col+'Q':p;
+  nb[from]='';
+  return{nb,ncr,nep};
+}
+function cLegal(board,r,c,turn,cr,ep){
+  const p=board[cIdx(r,c)]; if(!p||p[0]!==turn)return[];
+  const opp=turn==='w'?'b':'w';
+  return cPseudo(board,r,c,cr,ep).filter(to=>{
+    const[tr,tc]=cRc(to);
+    if(p[1]==='K'&&Math.abs(tc-c)===2){
+      if(cInCheck(board,turn))return false;
+      const pc2=tc===6?5:3;
+      if(cAttacked(board,r,pc2,opp))return false;
+    }
+    const{nb}=cApply(board,cIdx(r,c),to,cr,ep);
+    return!cInCheck(nb,turn);
+  });
+}
+function cHasLegal(board,turn,cr,ep){
+  for(let i=0;i<64;i++){
+    if(!board[i]||board[i][0]!==turn)continue;
+    const[r,c]=cRc(i); if(cLegal(board,r,c,turn,cr,ep).length>0)return true;
+  }
+  return false;
+}
+
+// ── ルーム管理 ──
+function chessMySI(st){if(!st||myIndex<0||!st.seats)return-1;return st.seats.findIndex(s=>s&&!s.left&&s.idx===myIndex);}
+function chessMyCol(st){const si=chessMySI(st);return si<0?null:(st.seats[si].color||null);}
+function chessRoomStat(st){
+  const n=(st&&st.seats?st.seats.filter(s=>s&&!s.left).length:0);
+  if(n===0)return{text:'空室',cls:'empty'};
+  if(n<2||st.phase==='waiting')return{text:'対戦準備中',cls:'waiting'};
+  return{text:'対戦中',cls:'playing'};
+}
+function chessRenderRL(){
+  const w=document.getElementById('chessRoomList'); if(!w)return;
+  let html='';
+  CHESS_ROOM_IDS.forEach(id=>{
+    const st=chessRooms[id];
+    const stat=chessRoomStat(st);
+    const msi=chessMySI(st);
+    const n=(st&&st.seats?st.seats.filter(s=>s&&!s.left).length:0);
+    let lbl='入室する',dis='';
+    if(msi>=0)lbl='ルームに戻る';
+    else if(n>=2){lbl='満室です';dis='disabled';}
+    const names=(st&&st.seats?st.seats.filter(s=>s&&!s.left).map(s=>`${esc(s.name)}（${s.color==='w'?'白':'黒'}）`).join('、'):'');
+    html+=`<div class="room-card">
+      <div class="rc-title">${CHESS_ROOM_LABELS[id]}</div>
+      <div class="room-badge ${stat.cls}">${stat.text}</div>
+      <div class="rc-players">${n}/2人${names?'：<b>'+names+'</b>':''}</div>
+      <button class="game-btn primary" ${dis} onclick="window._chessJoin('${id}')">${lbl}</button>
+    </div>`;
+  });
+  w.innerHTML=html;
+}
+window._chessJoin=async function(roomId){
+  if(myIndex<0){showToast('⚠️ 先にメンバーを選んでください');return}
+  let st=chessRooms[roomId]?chessNorm(JSON.parse(JSON.stringify(chessRooms[roomId]))):chessEmptyRoom();
+  const msi=chessMySI(st);
+  if(msi>=0){chessEnterRoom(roomId);return}
+  const active=(st.seats||[]).filter(s=>s&&!s.left);
+  if(active.length>=2){showToast('⚠️ このルームは満室です');return}
+  const name=members[myIndex]||`メンバー${myIndex+1}`;
+  const color=active.length===0?'w':'b';
+  const ns={idx:myIndex,name,color,left:false};
+  if(!st.seats)st.seats=[];
+  let pl=false;
+  for(let i=0;i<st.seats.length;i++){if(!st.seats[i]||st.seats[i].left){st.seats[i]=ns;pl=true;break;}}
+  if(!pl)st.seats.push(ns);
+  st.updatedAt=Date.now();
+  chessRooms={...chessRooms,[roomId]:st};
+  chessEnterRoom(roomId);
+  const ok=await fbSet(DB_CHESS+'/'+roomId,st);
+  if(!ok)showToast('❌ 入室の保存に失敗しました');
+};
+window._chessStart=async function(){
+  if(!chessCurrentRoom)return;
+  let st=chessNorm(JSON.parse(JSON.stringify(chessRooms[chessCurrentRoom])));
+  if((st.seats||[]).filter(s=>s&&!s.left).length<2){showToast('⚠️ 2人揃ってから開始できます');return}
+  st.phase='game'; st.board=chessInitBoard(); st.turn='w';
+  st.cr={wK:true,wQ:true,bK:true,bQ:true}; st.ep=null; st.lastMove=null;
+  st.winner=null; st.winReason=null; st.handNum=(st.handNum||0)+1; st.updatedAt=Date.now();
+  chessSel=null; chessHL=new Set(); chessCAP=new Set();
+  chessRooms={...chessRooms,[chessCurrentRoom]:st};
+  chessRenderRV();
+  await fbSet(DB_CHESS+'/'+chessCurrentRoom,st);
+};
+window._chessClick=async function(si){
+  if(!chessCurrentRoom)return;
+  const st=chessRooms[chessCurrentRoom];
+  if(!st||st.phase!=='game')return;
+  const myCol=chessMyCol(st);
+  if(!myCol||myCol!==st.turn)return;
+  const[r,c]=cRc(si);
+  if(chessSel!==null&&(chessHL.has(si)||chessCAP.has(si))){
+    let ns=chessNorm(JSON.parse(JSON.stringify(st)));
+    const[fr,fc]=cRc(chessSel);
+    const{nb,ncr,nep}=cApply(ns.board,chessSel,si,ns.cr,ns.ep);
+    ns.board=nb; ns.cr=ncr; ns.ep=nep; ns.lastMove={from:chessSel,to:si};
+    const nextTurn=st.turn==='w'?'b':'w'; ns.turn=nextTurn;
+    if(!cHasLegal(nb,nextTurn,ncr,nep)){
+      ns.phase='finished';
+      ns.winner=cInCheck(nb,nextTurn)?st.turn:'draw';
+      ns.winReason=cInCheck(nb,nextTurn)?'checkmate':'stalemate';
+    }
+    ns.updatedAt=Date.now();
+    chessSel=null; chessHL=new Set(); chessCAP=new Set();
+    chessRooms={...chessRooms,[chessCurrentRoom]:ns};
+    chessRenderRV();
+    await fbSet(DB_CHESS+'/'+chessCurrentRoom,ns);
+    return;
+  }
+  const piece=st.board[si];
+  if(piece&&piece[0]===myCol){
+    const legal=cLegal(st.board,r,c,st.turn,st.cr,st.ep);
+    chessSel=si; chessHL=new Set(); chessCAP=new Set();
+    legal.forEach(to=>{st.board[to]?chessCAP.add(to):chessHL.add(to);});
+    chessDrawBoard(st); return;
+  }
+  chessSel=null; chessHL=new Set(); chessCAP=new Set();
+  chessDrawBoard(st);
+};
+window._chessResign=async function(){
+  if(!chessCurrentRoom)return;
+  if(!confirm('投了しますか？'))return;
+  let st=chessNorm(JSON.parse(JSON.stringify(chessRooms[chessCurrentRoom])));
+  if(st.phase!=='game')return;
+  const myCol=chessMyCol(st);
+  st.winner=myCol==='w'?'b':'w'; st.winReason='resign'; st.phase='finished'; st.updatedAt=Date.now();
+  chessRooms={...chessRooms,[chessCurrentRoom]:st};
+  chessRenderRV();
+  await fbSet(DB_CHESS+'/'+chessCurrentRoom,st);
+};
+window._chessLeave=async function(){
+  if(!chessCurrentRoom){chessShowRL();return}
+  const roomId=chessCurrentRoom;
+  let st=chessRooms[roomId]?chessNorm(JSON.parse(JSON.stringify(chessRooms[roomId]))):null;
+  if(!st){chessShowRL();return}
+  const si=chessMySI(st);
+  if(si>=0){
+    if(st.phase==='game'){
+      if(!confirm('退室すると負けになります。よろしいですか？'))return;
+      const mc=st.seats[si].color;
+      st.winner=mc==='w'?'b':'w'; st.winReason='resign'; st.phase='finished';
+    }
+    st.seats[si].left=true; st.updatedAt=Date.now();
+  }
+  chessSel=null; chessHL=new Set(); chessCAP=new Set();
+  chessRooms={...chessRooms,[roomId]:st};
+  await fbSet(DB_CHESS+'/'+roomId,st);
+  chessShowRL();
+};
+function chessEnterRoom(roomId){
+  chessCurrentRoom=roomId;
+  document.getElementById('chessRoomList').style.display='none';
+  document.getElementById('chessRoomView').style.display='block';
+  document.getElementById('chessHeaderTitle').textContent='♟ '+CHESS_ROOM_LABELS[roomId];
+  chessSel=null; chessHL=new Set(); chessCAP=new Set();
+  chessRenderRV();
+}
+function chessShowRL(){
+  chessCurrentRoom=null;
+  document.getElementById('chessRoomView').style.display='none';
+  document.getElementById('chessRoomList').style.display='flex';
+  document.getElementById('chessHeaderTitle').textContent='♟ チェス';
+  chessRenderRL();
+}
+window._chessBack=function(){if(chessCurrentRoom)chessShowRL();else window._closeChess();};
+
+function chessDrawBoard(st){
+  const el=document.getElementById('chessBoardEl'); if(!el||!st||!st.board)return;
+  const myCol=chessMyCol(st), flip=myCol==='b';
+  let html='';
+  for(let ri=0;ri<8;ri++){for(let ci=0;ci<8;ci++){
+    const r=flip?7-ri:ri, c=flip?7-ci:ci, si=cIdx(r,c);
+    const p=st.board[si];
+    const lt=(r+c)%2===0;
+    let cls='csq '+(lt?'lt':'dk');
+    if(chessSel===si)cls+=' sel';
+    else if((st.lastMove&&(st.lastMove.from===si||st.lastMove.to===si)))cls+=' lm';
+    let inner='';
+    if(p)inner=`<span class="csp ${p[0]==='w'?'wp':'bp'}">${CPC[p]||''}</span>`;
+    if(chessCAP.has(si))inner=`<span class="ccap"></span>`+inner;
+    if(chessHL.has(si))inner+=`<span class="cdot"></span>`;
+    html+=`<div class="${cls}" onclick="window._chessClick(${si})">${inner}</div>`;
+  }}
+  el.innerHTML=html;
+}
+function chessRenderRV(){
+  if(!chessCurrentRoom)return;
+  const st=chessRooms[chessCurrentRoom];
+  if(!st){chessShowRL();return}
+  const infoEl=document.getElementById('chessInfo');
+  const msgEl=document.getElementById('chessMsg');
+  const acEl=document.getElementById('chessActionBar');
+  const btEl=document.getElementById('chessBtns');
+  const seats=st.seats||[];
+  const myCol=chessMyCol(st);
+  const wp=seats.find(s=>s&&s.color==='w'&&!s.left);
+  const bp=seats.find(s=>s&&s.color==='b'&&!s.left);
+
+  infoEl.innerHTML=`<div class="chess-players">
+    <div class="chess-player-pill ${st.phase==='game'&&st.turn==='w'?'active':''} ${wp&&wp.idx===myIndex?'mine':''}">♔ ${wp?esc(wp.name):'空席'}</div>
+    <div class="chess-turn-arrow">${st.phase==='game'?(st.turn==='w'?'▶':'◀'):''}</div>
+    <div class="chess-player-pill ${st.phase==='game'&&st.turn==='b'?'active':''} ${bp&&bp.idx===myIndex?'mine':''}">♚ ${bp?esc(bp.name):'空席'}</div>
+  </div>`;
+
+  if(st.phase==='waiting'){
+    document.getElementById('chessBoardEl').innerHTML='';
+    const n=seats.filter(s=>s&&!s.left).length;
+    msgEl.textContent=n>=2?'2人揃っています。先に入室した方が白（先手）です':'相手の入室をお待ちください';
+    acEl.innerHTML=''; btEl.innerHTML=(n>=2?`<button class="game-btn primary" onclick="window._chessStart()">▶ 対局開始</button>`:'')
+      +`<button class="game-btn" onclick="window._chessLeave()">🚪 退室する</button>`;
+  } else if(st.phase==='game'){
+    chessDrawBoard(st);
+    const inCheck=cInCheck(st.board,st.turn);
+    const turnName=st.turn==='w'?(wp?esc(wp.name):'白'):(bp?esc(bp.name):'黒');
+    const isMyT=myCol===st.turn;
+    msgEl.textContent=inCheck?`⚠️ ${turnName}にチェック！`:(isMyT?'あなたのターンです　駒をタップして移動先を選んでください':`${turnName}のターンです`);
+    acEl.innerHTML=''; btEl.innerHTML=(isMyT?`<button class="game-btn" onclick="window._chessResign()" style="color:#B91C1C;border-color:#FCA5A5">🏳 投了する</button>`:'')
+      +`<button class="game-btn" onclick="window._chessLeave()">🚪 退室する（負けになります）</button>`;
+  } else if(st.phase==='finished'){
+    chessDrawBoard(st);
+    let txt='';
+    if(st.winner==='draw')txt='引き分け（ステールメイト）';
+    else{const wn=seats.find(s=>s&&s.color===st.winner);const rsn={checkmate:'チェックメイト',resign:'投了',stalemate:'ステールメイト'}[st.winReason]||'';txt=`🏆 ${wn?esc(wn.name):'?'}の勝ち（${rsn}）`;}
+    msgEl.textContent=txt; acEl.innerHTML='';
+    btEl.innerHTML=`<button class="game-btn primary" onclick="window._chessStart()">▶ 再対局</button>
+      <button class="game-btn" onclick="window._chessLeave()">🚪 退室する</button>`;
+  }
+}
+window._openChess=function(){
+  chessFrom=document.getElementById('appScreen').style.display==='block'?'app':'toybox';
+  hideAll(); document.getElementById('chessScreen').style.display='block';
+  chessShowRL();
+  if(!unsubChess){
+    unsubChess=fbListen(DB_CHESS,val=>{
+      chessRooms={};
+      if(val)Object.entries(val).forEach(([id,r])=>{chessRooms[id]=chessNorm(r);});
+      if(chessCurrentRoom){chessSel=null;chessHL=new Set();chessCAP=new Set();chessRenderRV();}
+      else chessRenderRL();
+    });
+  } else {
+    if(chessCurrentRoom)chessRenderRV(); else chessRenderRL();
+  }
+};
+window._closeChess=function(){
+  document.getElementById('chessScreen').style.display='none';
+  if(chessFrom==='app')document.getElementById('appScreen').style.display='block';
+  else if(chessFrom==='toybox')document.getElementById('toyboxScreen').style.display='block';
+  else{if(myIndex>=0){renderLoginScreen();document.getElementById('loginScreen').style.display='flex';}else showMemberSelectScreen();}
 };
 
 // ─── 初期化 ───────────────────────────────────────────────
